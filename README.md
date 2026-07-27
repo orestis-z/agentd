@@ -89,4 +89,4 @@ Tool invocations are logged as JSONL to stderr. The final result goes to stdout.
 
 ## Architecture
 
-See [devenv/docs/agentic-core-plan.md](https://github.com/orestis-z/devenv/blob/main/docs/agentic-core-plan.md) for full research and rationale.
+See the [research & plan document](https://gist.github.com/orestis-z/e5a3cd26c0d5c59d31c1e4368dbbf2bd) for full rationale, tool evaluations, and security design.
