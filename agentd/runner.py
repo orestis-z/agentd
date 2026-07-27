@@ -6,10 +6,12 @@ import dataclasses
 import json
 import os
 import sys
+import uuid
 
 from claude_agent_sdk import ClaudeAgentOptions, query
 
 from agentd.config import load_task
+import agentd.hooks as hooks
 from agentd.hooks import logging_hook, security_hook
 from agentd.notify import post_slack
 
@@ -44,6 +46,7 @@ async def run(task_path: str, dry_run: bool = False) -> int:
         print(json.dumps(dataclasses.asdict(task), indent=2, default=str))
         return 0
 
+    hooks.run_id = str(uuid.uuid4())
     _log({"event": "task_start", "task": task.name, "prompt": task.prompt[:200]})
 
     options = ClaudeAgentOptions(

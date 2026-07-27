@@ -5,6 +5,8 @@ import re
 import sys
 from datetime import datetime, timezone
 
+run_id: str | None = None
+
 SECRET_PATTERNS = [
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"ghp_[A-Za-z0-9_]{36,}"),
@@ -26,6 +28,8 @@ def _scan(text: str) -> str | None:
 
 def _log(record: dict) -> None:
     record["ts"] = datetime.now(timezone.utc).isoformat()
+    if run_id is not None:
+        record.setdefault("run_id", run_id)
     print(json.dumps(record, default=str), file=sys.stderr, flush=True)
 
 
