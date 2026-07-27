@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import dataclasses
 import json
+import os
 import sys
 
 from claude_agent_sdk import ClaudeAgentOptions, query
 
 from agentd.config import load_task
 from agentd.hooks import logging_hook, security_hook
+from agentd.notify import post_slack
 
 
 def _log(record: dict) -> None:
@@ -16,11 +19,29 @@ def _log(record: dict) -> None:
     _do_log(record)
 
 
+def _notify(task, exit_code: int, result_text: str, metadata: dict) -> None:
+    if not task.notify:
+        return
+    webhook_url = os.environ.get(task.notify.slack_webhook_env)
+    if not webhook_url:
+        _log({
+            "event": "notify_skip",
+            "reason": f"env var {task.notify.slack_webhook_env} not set",
+        })
+        return
+
+    if exit_code == 0 and "success" in task.notify.on:
+        post_slack(webhook_url, task.name, "SUCCESS", result_text or "Task completed.", metadata)
+    elif exit_code != 0 and "failure" in task.notify.on:
+        detail = result_text or f"Task failed with exit code {exit_code}."
+        post_slack(webhook_url, task.name, "FAILURE", detail, metadata)
+
+
 async def run(task_path: str, dry_run: bool = False) -> int:
     task = load_task(task_path)
 
     if dry_run:
-        print(json.dumps(task.__dict__, indent=2, default=str))
+        print(json.dumps(dataclasses.asdict(task), indent=2, default=str))
         return 0
 
     _log({"event": "task_start", "task": task.name, "prompt": task.prompt[:200]})
@@ -44,20 +65,28 @@ async def run(task_path: str, dry_run: bool = False) -> int:
     }
 
     exit_code = 2
+    result_text = ""
+    result_metadata = {}
+
     async for msg in query(prompt=task.prompt, options=options):
         if hasattr(msg, "result"):
+            result_metadata = {
+                "num_turns": getattr(msg, "num_turns", None),
+                "total_cost_usd": getattr(msg, "total_cost_usd", None),
+                "duration_ms": getattr(msg, "duration_ms", None),
+            }
             _log({
                 "event": "task_result",
                 "task": task.name,
                 "is_error": getattr(msg, "is_error", False),
                 "subtype": getattr(msg, "subtype", None),
-                "num_turns": getattr(msg, "num_turns", None),
-                "total_cost_usd": getattr(msg, "total_cost_usd", None),
-                "duration_ms": getattr(msg, "duration_ms", None),
+                **result_metadata,
             })
-            print(msg.result)
+            result_text = msg.result
+            print(result_text)
             exit_code = 1 if getattr(msg, "is_error", False) else 0
 
+    _notify(task, exit_code, result_text, result_metadata)
     return exit_code
 
 

@@ -54,6 +54,28 @@ A PreToolUse hook scans every tool invocation for secret patterns before executi
 
 Matched invocations are denied. Extend `SECRET_PATTERNS` in `agentd/hooks.py`.
 
+## Notifications
+
+Tasks can optionally post to Slack on success, failure, or both:
+
+```yaml
+notify:
+  slack_webhook_env: SLACK_WEBHOOK_URL   # env var name holding the webhook URL
+  on: [success, failure]                  # default: [failure]
+```
+
+- `slack_webhook_env` — name of the environment variable containing the Slack webhook URL (not the URL itself)
+- `on` — when to notify: `success`, `failure`, or both (default: `[failure]`)
+
+On success, the agent's final result is posted. On failure, the error details are posted. Cost, turns, and duration metadata are included automatically.
+
+Set the env var in your shell or K8s Secret:
+
+```bash
+export SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T.../B.../...
+agentd --task tasks/autopilot.yml
+```
+
 ## vLLM model swap
 
 Point at a local vLLM instance instead of Claude via Vertex AI:

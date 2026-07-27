@@ -6,6 +6,15 @@ from pathlib import Path
 import yaml
 
 
+VALID_NOTIFY_EVENTS = {"success", "failure"}
+
+
+@dataclass
+class NotifyConfig:
+    slack_webhook_env: str
+    on: list[str] = field(default_factory=lambda: ["failure"])
+
+
 @dataclass
 class TaskConfig:
     name: str
@@ -15,6 +24,7 @@ class TaskConfig:
     max_turns: int | None = None
     max_budget_usd: float | None = None
     cwd: str | None = None
+    notify: NotifyConfig | None = None
 
 
 def load_task(path: str | Path) -> TaskConfig:
@@ -28,6 +38,17 @@ def load_task(path: str | Path) -> TaskConfig:
         if key not in data:
             raise ValueError(f"{path}: missing required field '{key}'")
 
+    notify = None
+    if "notify" in data:
+        n = data["notify"]
+        if not isinstance(n, dict) or "slack_webhook_env" not in n:
+            raise ValueError(f"{path}: notify requires 'slack_webhook_env'")
+        on = n.get("on", ["failure"])
+        invalid = set(on) - VALID_NOTIFY_EVENTS
+        if invalid:
+            raise ValueError(f"{path}: invalid notify.on values: {invalid}")
+        notify = NotifyConfig(slack_webhook_env=n["slack_webhook_env"], on=on)
+
     return TaskConfig(
         name=data["name"],
         prompt=data["prompt"],
@@ -36,4 +57,5 @@ def load_task(path: str | Path) -> TaskConfig:
         max_turns=data.get("max_turns"),
         max_budget_usd=data.get("max_budget_usd"),
         cwd=data.get("cwd"),
+        notify=notify,
     )
