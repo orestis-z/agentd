@@ -1,0 +1,12 @@
+name: code-review
+prompt: |
+  Review the latest commit on the current branch for bugs, security issues,
+  and style violations. Report findings as a summary. Do not modify any files.
+allowed_tools:
+  - Bash
+  - Read
+  - Glob
+  - Grep
+max_turns: 20
+max_budget_usd: 2.0
+cwd: /workspace/speculators

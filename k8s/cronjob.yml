@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: agentd-${TASK_NAME}
+  namespace: ${NAMESPACE}
+  labels:
+    app: agentd
+spec:
+  schedule: "${SCHEDULE}"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels:
+            app: agentd
+        spec:
+          serviceAccountName: ml-workload
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 0
+          containers:
+          - name: agent
+            image: ghcr.io/orestis-z/devenv:latest
+            command: ["python", "-m", "agentd", "--task", "/tasks/${TASK_NAME}.yml"]
+            env:
+            - name: CLAUDE_CODE_USE_VERTEX
+              value: "1"
+            - name: CLOUD_ML_REGION
+              value: "global"
+            - name: ANTHROPIC_VERTEX_PROJECT_ID
+              value: "itpc-gcp-ai-eng-claude"
+            volumeMounts:
+            - name: tasks
+              mountPath: /tasks
+            - name: workspace
+              mountPath: /workspace
+            resources:
+              requests:
+                cpu: "1"
+                memory: 2Gi
+              limits:
+                cpu: "2"
+                memory: 4Gi
+          volumes:
+          - name: tasks
+            configMap:
+              name: agentd-tasks
+          - name: workspace
+            persistentVolumeClaim:
+              claimName: devenv-workspace-${USER}
+          restartPolicy: Never

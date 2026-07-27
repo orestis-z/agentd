@@ -1,0 +1,28 @@
+# agentd
+
+Headless AI agent runner using the Claude Agent SDK. Runs scheduled, unsupervised coding tasks on OpenShift.
+
+## Setup
+
+Python 3.10+. Install deps:
+
+```bash
+pip install -e .
+```
+
+## Running
+
+```bash
+agentd --task tasks/example-code-review.yml
+agentd --task tasks/example-fix-test.yml --dry-run
+```
+
+Requires Vertex AI auth (`CLAUDE_CODE_USE_VERTEX=1`) or `ANTHROPIC_API_KEY`.
+
+## Structure
+
+- `agentd/runner.py` — CLI entry point, async query loop
+- `agentd/config.py` — task YAML loader + validation
+- `agentd/hooks.py` — PreToolUse security scanner, PostToolUse JSONL logger
+- `tasks/` — task definitions (YAML)
+- `k8s/` — CronJob and NetworkPolicy manifests
