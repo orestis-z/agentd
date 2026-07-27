@@ -43,7 +43,8 @@ def load_task(path: str | Path) -> TaskConfig:
         n = data["notify"]
         if not isinstance(n, dict) or "slack_webhook_env" not in n:
             raise ValueError(f"{path}: notify requires 'slack_webhook_env'")
-        on = n.get("on", ["failure"])
+        # YAML parses bare `on:` as boolean True — handle both keys
+        on = n.get("on", n.get(True, ["failure"]))
         invalid = set(on) - VALID_NOTIFY_EVENTS
         if invalid:
             raise ValueError(f"{path}: invalid notify.on values: {invalid}")

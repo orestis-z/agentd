@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Runs</h1>
+
+<section class="launch-form">
+    <h2>Launch</h2>
+    <form method="POST" action="{{ url_for('launch') }}">
+        <select name="task" required>
+            <option value="">Select task...</option>
+            {% for task in tasks %}
+            <option value="{{ task }}">{{ task }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Run</button>
+    </form>
+</section>
+
+<section>
+    <table>
+        <thead>
+            <tr>
+                <th>Run ID</th>
+                <th>Task</th>
+                <th>Started</th>
+                <th>Status</th>
+                <th>Cost</th>
+                <th>Turns</th>
+                <th>Duration</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for run in runs %}
+            <tr class="status-{{ run.status }}">
+                <td><code>{{ run.run_id_short }}</code></td>
+                <td>{{ run.task }}</td>
+                <td>{{ run.started }}</td>
+                <td>
+                    {% if run.status == 'success' %}
+                    <span class="badge success">success</span>
+                    {% elif run.status == 'failed' %}
+                    <span class="badge failed">failed</span>
+                    {% else %}
+                    <span class="badge running">running</span>
+                    {% endif %}
+                </td>
+                <td>{% if run.cost is not none %}${{ "%.2f"|format(run.cost) }}{% else %}-{% endif %}</td>
+                <td>{{ run.turns or "-" }}</td>
+                <td>{{ run.duration or "-" }}</td>
+                <td><a href="{{ url_for('ask', run_id=run.run_id) }}">ask why</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8">No runs yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

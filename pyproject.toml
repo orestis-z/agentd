@@ -8,9 +8,15 @@ dependencies = [
     "pyyaml",
 ]
 
+[project.optional-dependencies]
+test = ["pytest", "pytest-asyncio"]
+
 [project.scripts]
 agentd = "agentd.runner:main"
 
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
 [build-system]
 requires = ["setuptools>=64"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"

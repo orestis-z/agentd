@@ -6,6 +6,7 @@ import sys
 from datetime import datetime, timezone
 
 run_id: str | None = None
+_log_file = None  # temporary: file-based logging until Loki is set up
 
 SECRET_PATTERNS = [
     re.compile(r"AKIA[0-9A-Z]{16}"),
@@ -30,7 +31,12 @@ def _log(record: dict) -> None:
     record["ts"] = datetime.now(timezone.utc).isoformat()
     if run_id is not None:
         record.setdefault("run_id", run_id)
-    print(json.dumps(record, default=str), file=sys.stderr, flush=True)
+    line = json.dumps(record, default=str)
+    print(line, file=sys.stderr, flush=True)
+    # temporary: file-based logging until Loki is set up
+    if _log_file is not None:
+        _log_file.write(line + "\n")
+        _log_file.flush()
 
 
 async def security_hook(input_data, tool_use_id=None, context=None):

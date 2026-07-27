@@ -107,7 +107,53 @@ oc apply -f k8s/networkpolicy.yml -n machine-learning
 
 ## Logging
 
-Tool invocations are logged as JSONL to stderr. The final result goes to stdout. On OpenShift, both are picked up by the cluster log aggregator.
+Tool invocations are logged as JSONL to stderr and to per-run log files at `AGENTD_LOG_DIR/<run_id>.jsonl` (default: `./logs/`). Each run gets a UUID `run_id` included in every log line.
+
+Set `AGENTD_LOG_DIR` to control where log files are written:
+
+```bash
+export AGENTD_LOG_DIR=/workspace/agentd-logs
+agentd --task tasks/fix-test.yml
+```
+
+> **Note:** File-based logging is temporary until Loki is set up on the cluster. Once Loki is live, pod stderr will be the primary log source and file logging can be removed.
+
+## Web UI
+
+A lightweight Flask UI for managing runs and querying logs.
+
+### Local
+
+```bash
+cd ui
+pip install flask claude-agent-sdk pyyaml
+AGENTD_LOG_DIR=../logs AGENTD_TASK_DIR=../tasks python app.py
+```
+
+Open `http://localhost:5000`.
+
+### Docker
+
+```bash
+docker build -t agentd-ui ui/
+docker run -p 5000:5000 \
+  -v ./logs:/data/logs -e AGENTD_LOG_DIR=/data/logs \
+  -v ./tasks:/tasks -e AGENTD_TASK_DIR=/tasks \
+  agentd-ui
+```
+
+### OpenShift
+
+```bash
+export NAMESPACE=machine-learning
+envsubst < k8s/ui-deployment.yml | oc apply -f -
+```
+
+### Features
+
+- **Run list** — view past and active runs with status, cost, and duration
+- **Launch** — start a new run from the available task definitions
+- **Ask why** — ask questions about a run's logs (powered by Claude)
 
 ## Architecture
 

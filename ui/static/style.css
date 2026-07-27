@@ -1,0 +1,116 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+    background: #0d1117;
+    color: #c9d1d9;
+    line-height: 1.5;
+}
+
+nav {
+    padding: 12px 24px;
+    border-bottom: 1px solid #21262d;
+}
+
+nav .logo {
+    color: #58a6ff;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+h1 { margin-bottom: 16px; }
+h2 { margin: 16px 0 8px; font-size: 16px; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+}
+
+th, td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #21262d;
+}
+
+th { color: #8b949e; font-size: 13px; }
+
+code { background: #161b22; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.badge.success { background: #1b4332; color: #2dc653; }
+.badge.failed { background: #4a1520; color: #f85149; }
+.badge.running { background: #1c3150; color: #58a6ff; }
+
+a { color: #58a6ff; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.launch-form { margin-bottom: 24px; }
+
+select, input[type="text"] {
+    background: #161b22;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+input[type="text"] { width: 60%; }
+
+button {
+    background: #238636;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 4px;
+}
+
+button:hover { background: #2ea043; }
+
+.flash {
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.flash.success { background: #1b4332; color: #2dc653; }
+.flash.error { background: #4a1520; color: #f85149; }
+
+.run-info {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 16px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.run-info dt { color: #8b949e; }
+
+.answer pre {
+    background: #161b22;
+    padding: 16px;
+    border-radius: 6px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin-top: 8px;
+    font-size: 14px;
+}

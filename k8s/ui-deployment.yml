@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentd-ui
+  namespace: ${NAMESPACE}
+  labels:
+    app: agentd-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agentd-ui
+  template:
+    metadata:
+      labels:
+        app: agentd-ui
+    spec:
+      serviceAccountName: ml-workload
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 0
+      containers:
+      - name: ui
+        image: ghcr.io/orestis-z/agentd-ui:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: AGENTD_LOG_DIR
+          value: /data/logs
+        - name: AGENTD_TASK_DIR
+          value: /tasks
+        - name: CLAUDE_CODE_USE_VERTEX
+          value: "1"
+        - name: CLOUD_ML_REGION
+          value: "global"
+        - name: ANTHROPIC_VERTEX_PROJECT_ID
+          value: "itpc-gcp-ai-eng-claude"
+        volumeMounts:
+        - name: logs
+          mountPath: /data/logs
+        - name: tasks
+          mountPath: /tasks
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+      volumes:
+      - name: logs
+        persistentVolumeClaim:
+          claimName: agentd-logs
+      - name: tasks
+        configMap:
+          name: agentd-tasks
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentd-ui
+  namespace: ${NAMESPACE}
+  labels:
+    app: agentd-ui
+spec:
+  selector:
+    app: agentd-ui
+  ports:
+  - port: 5000
+    targetPort: 5000
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: agentd-ui
+  namespace: ${NAMESPACE}
+spec:
+  to:
+    kind: Service
+    name: agentd-ui
+  port:
+    targetPort: 5000
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

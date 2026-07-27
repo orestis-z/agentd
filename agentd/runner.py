@@ -47,50 +47,61 @@ async def run(task_path: str, dry_run: bool = False) -> int:
         return 0
 
     hooks.run_id = str(uuid.uuid4())
-    _log({"event": "task_start", "task": task.name, "prompt": task.prompt[:200]})
 
-    options = ClaudeAgentOptions(
-        permission_mode="bypassPermissions",
-    )
-    if task.system_prompt:
-        options.system_prompt = task.system_prompt
-    if task.allowed_tools:
-        options.allowed_tools = task.allowed_tools
-    if task.max_turns is not None:
-        options.max_turns = task.max_turns
-    if task.max_budget_usd is not None:
-        options.max_budget_usd = task.max_budget_usd
-    if task.cwd:
-        options.cwd = task.cwd
-    options.hooks = {
-        "PreToolUse": [{"callback": security_hook}],
-        "PostToolUse": [{"callback": logging_hook}],
-    }
+    # temporary: file-based logging until Loki is set up
+    log_dir = os.environ.get("AGENTD_LOG_DIR", os.path.join(os.getcwd(), "logs"))
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, f"{hooks.run_id}.jsonl")
+    hooks._log_file = open(log_path, "w")
 
-    exit_code = 2
-    result_text = ""
-    result_metadata = {}
+    try:
+        _log({"event": "task_start", "task": task.name, "prompt": task.prompt[:200]})
 
-    async for msg in query(prompt=task.prompt, options=options):
-        if hasattr(msg, "result"):
-            result_metadata = {
-                "num_turns": getattr(msg, "num_turns", None),
-                "total_cost_usd": getattr(msg, "total_cost_usd", None),
-                "duration_ms": getattr(msg, "duration_ms", None),
-            }
-            _log({
-                "event": "task_result",
-                "task": task.name,
-                "is_error": getattr(msg, "is_error", False),
-                "subtype": getattr(msg, "subtype", None),
-                **result_metadata,
-            })
-            result_text = msg.result
-            print(result_text)
-            exit_code = 1 if getattr(msg, "is_error", False) else 0
+        options = ClaudeAgentOptions(
+            permission_mode="bypassPermissions",
+        )
+        if task.system_prompt:
+            options.system_prompt = task.system_prompt
+        if task.allowed_tools:
+            options.allowed_tools = task.allowed_tools
+        if task.max_turns is not None:
+            options.max_turns = task.max_turns
+        if task.max_budget_usd is not None:
+            options.max_budget_usd = task.max_budget_usd
+        if task.cwd:
+            options.cwd = task.cwd
+        options.hooks = {
+            "PreToolUse": [{"callback": security_hook}],
+            "PostToolUse": [{"callback": logging_hook}],
+        }
 
-    _notify(task, exit_code, result_text, result_metadata)
-    return exit_code
+        exit_code = 2
+        result_text = ""
+        result_metadata = {}
+
+        async for msg in query(prompt=task.prompt, options=options):
+            if hasattr(msg, "result"):
+                result_metadata = {
+                    "num_turns": getattr(msg, "num_turns", None),
+                    "total_cost_usd": getattr(msg, "total_cost_usd", None),
+                    "duration_ms": getattr(msg, "duration_ms", None),
+                }
+                _log({
+                    "event": "task_result",
+                    "task": task.name,
+                    "is_error": getattr(msg, "is_error", False),
+                    "subtype": getattr(msg, "subtype", None),
+                    **result_metadata,
+                })
+                result_text = msg.result
+                print(result_text)
+                exit_code = 1 if getattr(msg, "is_error", False) else 0
+
+        _notify(task, exit_code, result_text, result_metadata)
+        return exit_code
+    finally:
+        hooks._log_file.close()
+        hooks._log_file = None
 
 
 def main():
