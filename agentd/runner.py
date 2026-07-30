@@ -79,23 +79,38 @@ async def run(task_path: str, dry_run: bool = False) -> int:
         result_text = ""
         result_metadata = {}
 
-        async for msg in query(prompt=task.prompt, options=options):
-            if hasattr(msg, "result"):
-                result_metadata = {
-                    "num_turns": getattr(msg, "num_turns", None),
-                    "total_cost_usd": getattr(msg, "total_cost_usd", None),
-                    "duration_ms": getattr(msg, "duration_ms", None),
-                }
-                _log({
-                    "event": "task_result",
-                    "task": task.name,
-                    "is_error": getattr(msg, "is_error", False),
-                    "subtype": getattr(msg, "subtype", None),
-                    **result_metadata,
-                })
-                result_text = msg.result
-                print(result_text)
-                exit_code = 1 if getattr(msg, "is_error", False) else 0
+        try:
+            async for msg in query(prompt=task.prompt, options=options):
+                if hasattr(msg, "result"):
+                    result_metadata = {
+                        "num_turns": getattr(msg, "num_turns", None),
+                        "total_cost_usd": getattr(msg, "total_cost_usd", None),
+                        "duration_ms": getattr(msg, "duration_ms", None),
+                    }
+                    _log({
+                        "event": "task_result",
+                        "task": task.name,
+                        "is_error": getattr(msg, "is_error", False),
+                        "subtype": getattr(msg, "subtype", None),
+                        **result_metadata,
+                    })
+                    result_text = msg.result
+                    print(result_text)
+                    exit_code = 1 if getattr(msg, "is_error", False) else 0
+        except Exception as exc:
+            import traceback
+            error_text = traceback.format_exc()
+            _log({
+                "event": "task_result",
+                "task": task.name,
+                "is_error": True,
+                "subtype": "crash",
+                "error": str(exc),
+                "traceback": error_text,
+            })
+            result_text = str(exc)
+            print(error_text, file=sys.stderr)
+            exit_code = 2
 
         _notify(task, exit_code, result_text, result_metadata)
         return exit_code
