@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
+import shutil
 import glob
 from pathlib import Path
 
@@ -13,6 +13,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "agentd-ui-dev-key")
 
 LOG_DIR = os.environ.get("AGENTD_LOG_DIR", "./logs")
 TASK_DIR = os.environ.get("AGENTD_TASK_DIR", "./tasks")
+QUEUE_DIR = os.environ.get("AGENTD_QUEUE_DIR", "./queue")
 
 
 def _read_first_last(path: str) -> tuple[dict | None, dict | None]:
@@ -84,15 +85,9 @@ def launch():
         flash(f"Task file not found: {task_name}", "error")
         return redirect(url_for("index"))
 
-    cmd = os.environ.get("AGENTD_CMD", "agentd")
-    env = {**os.environ, "AGENTD_LOG_DIR": LOG_DIR}
-    subprocess.Popen(
-        [cmd, "--task", task_path],
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    flash(f"Launched: {task_name}", "success")
+    os.makedirs(QUEUE_DIR, exist_ok=True)
+    shutil.copy2(task_path, os.path.join(QUEUE_DIR, task_name))
+    flash(f"Queued: {task_name}", "success")
     return redirect(url_for("index"))
 
 
