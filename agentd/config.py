@@ -25,6 +25,9 @@ class TaskConfig:
     max_budget_usd: float | None = None
     cwd: str | None = None
     notify: NotifyConfig | None = None
+    gpus: int | None = None
+    gpu_type: str | None = None
+    timeout: int | None = None
 
 
 def load_task(path: str | Path) -> TaskConfig:
@@ -59,4 +62,7 @@ def load_task(path: str | Path) -> TaskConfig:
         max_budget_usd=data.get("max_budget_usd"),
         cwd=data.get("cwd"),
         notify=notify,
+        gpus=data.get("gpus"),
+        gpu_type=data.get("gpu_type"),
+        timeout=data.get("timeout"),
     )

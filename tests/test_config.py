@@ -99,3 +99,25 @@ def test_load_missing_prompt(tmp_path):
     p = _write_yaml(tmp_path, "name: test\n")
     with pytest.raises(ValueError, match="prompt"):
         load_task(p)
+
+
+def test_load_infra_fields(tmp_path):
+    p = _write_yaml(tmp_path, """
+name: gpu-task
+prompt: run eval
+gpus: 4
+gpu_type: h100
+timeout: 3600
+""")
+    task = load_task(p)
+    assert task.gpus == 4
+    assert task.gpu_type == "h100"
+    assert task.timeout == 3600
+
+
+def test_load_infra_fields_default_none(tmp_path):
+    p = _write_yaml(tmp_path, "name: test\nprompt: do something\n")
+    task = load_task(p)
+    assert task.gpus is None
+    assert task.gpu_type is None
+    assert task.timeout is None

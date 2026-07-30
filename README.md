@@ -38,9 +38,12 @@ allowed_tools:                      # optional (defaults to all)
 max_turns: 50                       # optional
 max_budget_usd: 5.0                 # optional
 cwd: /workspace/speculators         # optional
+gpus: 4                             # optional (orchestrator)
+gpu_type: h100                      # optional (orchestrator)
+timeout: 3600                       # optional (orchestrator, seconds)
 ```
 
-Required fields: `name`, `prompt`.
+Required fields: `name`, `prompt`. The `gpus`, `gpu_type`, and `timeout` fields are used by the orchestrator to provision pods with the right resources.
 
 ## Security
 
@@ -89,9 +92,38 @@ agentd --task tasks/fix-test.yml
 
 The model must support tool calling (`--enable-auto-tool-choice`).
 
+## Orchestrator
+
+A bastion-level daemon that watches a queue directory for task YAMLs and manages the full pod lifecycle per task:
+
+```bash
+agentd-orchestrate --queue ./queue/ --devenv-dir ~/repos/devenv
+```
+
+For each queued task, the orchestrator:
+
+1. Provisions an ephemeral pod via `launch.sh` with the GPU count/type from the task YAML
+2. Copies the task YAML into the pod and runs `agentd` inside it
+3. Extracts logs via `oc cp` before teardown
+4. Deletes the pod and its workspace PVC to ensure a clean state
+
+Options:
+
+```
+--queue DIR          Directory to watch for task YAML files
+--devenv-dir DIR     Path to the devenv repo (contains launch.sh)
+--log-dir DIR        Directory for extracted run logs (default: ./logs)
+--poll-interval SEC  Seconds between queue polls (default: 30)
+--namespace NS       OpenShift namespace (default: machine-learning)
+```
+
+Drop a task YAML into the queue directory to enqueue it. The orchestrator picks up the oldest file first and processes tasks sequentially. Completed tasks are moved to `completed/`, failed ones to `failed/`.
+
 ## K8s deployment
 
-Deploy as a CronJob on OpenShift:
+### CronJob (standalone)
+
+Deploy individual tasks as CronJobs on OpenShift:
 
 ```bash
 # Create task ConfigMap

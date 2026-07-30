@@ -1,0 +1,19 @@
+name: eval-model
+prompt: |
+  Run the evaluation script for the latest model checkpoint.
+  Report results as a summary. Do not modify any files.
+system_prompt: |
+  You are a developer working on the speculators repo.
+  Activate the venv before running: use speculators
+  Always use /workspace/speculators/.venv/bin/python for scripts.
+allowed_tools:
+  - Bash
+  - Read
+  - Glob
+  - Grep
+gpus: 4
+gpu_type: h100
+timeout: 3600
+cwd: /workspace/speculators
+max_turns: 30
+max_budget_usd: 5.0
