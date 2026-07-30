@@ -72,8 +72,14 @@ def run_task_in_pod(task_path: Path, task_name: str, timeout: int) -> int:
     _run_cmd([
         "oc", "exec", pod, "-n", NAMESPACE, "--",
         "bash", "-c",
-        f"pip install git+https://github.com/orestis-z/agentd.git && "
+        "set -e && "
+        "pip install git+https://github.com/orestis-z/agentd.git && "
         f"mkdir -p {remote_task_dir} /tmp/agentd-logs && "
+        "WS_GID=$(stat -c '%g' /workspace 2>/dev/null || echo 0) && "
+        "getent group $WS_GID &>/dev/null || groupadd -g $WS_GID workspace && "
+        "id claude-runner &>/dev/null 2>&1 || useradd -M -d /root -g $WS_GID -G 0 claude-runner && "
+        "chmod -R g+rX /root/.config /root/.claude /root/.cache 2>/dev/null || true && "
+        "chmod g+r /root/.claude/.credentials.json 2>/dev/null || true && "
         "python3 -c '"
         'import json, pathlib; '
         'p = pathlib.Path("/root/.claude.json"); '
