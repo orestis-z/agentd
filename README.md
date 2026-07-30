@@ -2,6 +2,32 @@
 
 Headless AI agent runner for scheduled, unsupervised coding tasks. Wraps the [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview) with task definitions, security hooks, and K8s deployment manifests.
 
+## Quickstart (bastion)
+
+```bash
+# Clone and install
+git clone https://github.com/orestis-z/agentd.git
+cd agentd
+pip install -e .
+
+# Verify
+agentd --task tasks/example-code-review.yml --dry-run
+
+# Run the orchestrator (watches queue/, provisions pods, runs tasks)
+mkdir -p queue
+agentd-orchestrate --queue ./queue/ --devenv-dir ~/repos/devenv &
+
+# Enqueue a task
+cp tasks/example-gpu-eval.yml queue/
+# The orchestrator will pick it up, spin up a pod, run the task, and tear down
+```
+
+Prerequisites:
+- Python 3.10+
+- `oc` logged into the OpenShift cluster (`oc login ...`)
+- [devenv](https://github.com/neuralmagic/devenv) repo cloned (for `launch.sh`)
+- Vertex AI auth (`CLAUDE_CODE_USE_VERTEX=1`) or `ANTHROPIC_API_KEY` set
+
 ## Install
 
 ```bash
@@ -11,7 +37,7 @@ pip install -e .
 ## Usage
 
 ```bash
-# Run a task
+# Run a task directly (inside a pod or locally)
 agentd --task tasks/example-code-review.yml
 
 # Dry run (print parsed config, don't execute)
