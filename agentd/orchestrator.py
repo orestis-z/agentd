@@ -73,7 +73,7 @@ def run_task_in_pod(task_path: Path, task_name: str, timeout: int) -> int:
         "bash", "-c",
         "set -e && "
         "pip install git+https://github.com/orestis-z/agentd.git && "
-        f"mkdir -p {remote_task_dir} /tmp/agentd-logs && "
+        f"mkdir -p {remote_task_dir} /tmp/agentd-logs && chmod 1777 /tmp/agentd-logs && "
         "WS_GID=$(stat -c '%g' /workspace 2>/dev/null || echo 0) && "
         "getent group $WS_GID &>/dev/null || groupadd -g $WS_GID workspace && "
         "id claude-runner &>/dev/null 2>&1 || useradd -M -d /root -g $WS_GID -G 0 claude-runner && "
