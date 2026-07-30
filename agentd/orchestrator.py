@@ -70,7 +70,9 @@ def run_task_in_pod(task_path: Path, task_name: str, timeout: int) -> int:
 
     _run_cmd([
         "oc", "exec", pod, "-n", NAMESPACE, "--",
-        "mkdir", "-p", remote_task_dir, "/tmp/agentd-logs",
+        "bash", "-c",
+        f"pip install git+https://github.com/orestis-z/agentd.git && "
+        f"mkdir -p {remote_task_dir} /tmp/agentd-logs",
     ])
 
     _run_cmd([
