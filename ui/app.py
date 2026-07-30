@@ -110,6 +110,17 @@ def launch():
     return redirect(url_for("index"))
 
 
+@app.route("/delete/<run_id>", methods=["POST"])
+def delete(run_id):
+    log_path = os.path.join(LOG_DIR, f"{run_id}.jsonl")
+    if os.path.isfile(log_path):
+        os.remove(log_path)
+        flash(f"Deleted run {run_id[:8]}", "success")
+    else:
+        flash("Run not found.", "error")
+    return redirect(url_for("index"))
+
+
 @app.route("/ask/<run_id>", methods=["GET", "POST"])
 def ask(run_id):
     log_path = os.path.join(LOG_DIR, f"{run_id}.jsonl")

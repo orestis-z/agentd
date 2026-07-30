@@ -58,7 +58,14 @@
                 <td>{% if run.cost is not none %}${{ "%.2f"|format(run.cost) }}{% else %}-{% endif %}</td>
                 <td>{{ run.turns or "-" }}</td>
                 <td>{{ run.duration or "-" }}</td>
-                <td>{% if run.run_id %}<a href="{{ url_for('ask', run_id=run.run_id) }}">ask why</a>{% else %}-{% endif %}</td>
+                <td>
+                    {% if run.run_id %}
+                    <a href="{{ url_for('ask', run_id=run.run_id) }}">ask why</a>
+                    <form method="POST" action="{{ url_for('delete', run_id=run.run_id) }}" style="display:inline" onsubmit="return confirm('Delete logs for run {{ run.run_id_short }}?')">
+                        <button type="submit" class="btn-icon" title="Delete run">&#x1f5d1;</button>
+                    </form>
+                    {% else %}-{% endif %}
+                </td>
             </tr>
             {% else %}
             <tr><td colspan="8">No runs yet.</td></tr>

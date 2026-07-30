@@ -57,6 +57,18 @@ code { background: #161b22; padding: 2px 6px; border-radius: 4px; font-size: 13p
 .badge.running { background: #1c3150; color: #58a6ff; }
 .badge.queued { background: #2d2a1b; color: #d29922; }
 
+.btn-icon {
+    background: none;
+    border: none;
+    color: #8b949e;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    margin-left: 8px;
+}
+
+.btn-icon:hover { color: #f85149; }
+
 a { color: #58a6ff; text-decoration: none; }
 a:hover { text-decoration: underline; }
 
