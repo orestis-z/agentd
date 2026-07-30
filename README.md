@@ -21,7 +21,7 @@ agentd --task tasks/example-code-review.yml --dry-run
 
 # Run the orchestrator (watches queue/, provisions pods, runs tasks)
 mkdir -p queue
-agentd-orchestrate --queue ./queue/ --devenv-dir ~/devenv &
+agentd-orchestrate --queue ./queue/ --devenv-dir ~/devenv --poll-interval 10 &
 
 # Enqueue a task
 cp tasks/example-gpu-eval.yml queue/
