@@ -56,7 +56,6 @@ def provision_pod(task_name: str, gpus: int, gpu_type: str, devenv_dir: Path):
             "--cluster",
         ],
         stdin=subprocess.DEVNULL,
-        env={**os.environ, "DEVENV_CLAUDE_RUNNER": "1"},
     )
     _run_cmd([
         "oc", "wait", "--for=condition=Ready",
