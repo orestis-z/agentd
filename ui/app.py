@@ -67,7 +67,9 @@ def _list_tasks() -> list[str]:
 
 @app.route("/")
 def index():
-    return render_template("runs.html", runs=_list_runs(), tasks=_list_tasks())
+    runs = _list_runs()
+    task_names = sorted(set(r["task"] for r in runs))
+    return render_template("runs.html", runs=runs, tasks=_list_tasks(), task_names=task_names)
 
 
 @app.route("/launch", methods=["POST"])

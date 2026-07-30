@@ -16,6 +16,15 @@
 </section>
 
 <section>
+    <div class="filter-bar">
+        <label for="task-filter">Filter by task:</label>
+        <select id="task-filter" onchange="filterRuns()">
+            <option value="">All tasks</option>
+            {% for task in task_names %}
+            <option value="{{ task }}">{{ task }}</option>
+            {% endfor %}
+        </select>
+    </div>
     <table>
         <thead>
             <tr>
@@ -31,7 +40,7 @@
         </thead>
         <tbody>
             {% for run in runs %}
-            <tr class="status-{{ run.status }}">
+            <tr class="status-{{ run.status }}" data-task="{{ run.task }}">
                 <td><code>{{ run.run_id_short }}</code></td>
                 <td>{{ run.task }}</td>
                 <td>{{ run.started }}</td>
@@ -55,4 +64,13 @@
         </tbody>
     </table>
 </section>
+<script>
+function filterRuns() {
+    var sel = document.getElementById('task-filter').value;
+    var rows = document.querySelectorAll('tbody tr[data-task]');
+    rows.forEach(function(row) {
+        row.style.display = (!sel || row.dataset.task === sel) ? '' : 'none';
+    });
+}
+</script>
 {% endblock %}
