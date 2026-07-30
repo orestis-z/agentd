@@ -101,7 +101,7 @@ def run_task_in_pod(task_path: Path, task_name: str, timeout: int) -> int:
             "oc", "exec", pod, "-n", NAMESPACE, "--",
             "bash", "-c",
             f"export AGENTD_LOG_DIR=/tmp/agentd-logs && "
-            f"su -s /bin/bash claude-runner -c 'python -m agentd --task {remote_task_path}'",
+            f"sudo -E -u claude-runner python -m agentd --task {remote_task_path}",
         ],
         timeout=timeout,
     )
