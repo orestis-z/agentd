@@ -77,6 +77,7 @@ def run_task_in_pod(task_path: Path, task_name: str, timeout: int) -> int:
         "WS_GID=$(stat -c '%g' /workspace 2>/dev/null || echo 0) && "
         "getent group $WS_GID &>/dev/null || groupadd -g $WS_GID workspace && "
         "id claude-runner &>/dev/null 2>&1 || useradd -M -d /root -g $WS_GID -G 0 claude-runner && "
+        "chmod g+rx /root && "
         "chmod -R g+rX /root/.config /root/.claude /root/.cache 2>/dev/null || true && "
         "chmod g+r /root/.claude/.credentials.json 2>/dev/null || true && "
         "python3 -c '"
