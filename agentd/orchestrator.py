@@ -91,6 +91,10 @@ def run_task_in_pod(task_path: Path, task_name: str, timeout: int) -> int:
         "oc", "cp", str(task_path),
         f"{NAMESPACE}/{pod}:{remote_task_path}",
     ])
+    _run_cmd([
+        "oc", "exec", pod, "-n", NAMESPACE, "--",
+        "chmod", "644", remote_task_path,
+    ])
 
     result = subprocess.run(
         [
