@@ -210,6 +210,8 @@ _devenv_dir: Path | None = None
 
 def _register_signal_handlers():
     def _handler(signum, _frame):
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
         if _current_task and _devenv_dir:
             teardown_pod(_current_task, _devenv_dir)
         sys.exit(128 + signum)
