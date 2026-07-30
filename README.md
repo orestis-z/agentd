@@ -5,10 +5,16 @@ Headless AI agent runner for scheduled, unsupervised coding tasks. Wraps the [Cl
 ## Quickstart (bastion)
 
 ```bash
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.bashrc
+
 # Clone and install
 git clone https://github.com/orestis-z/agentd.git
 cd agentd
-pip install -e .
+uv venv --python 3.12 .venv
+source .venv/bin/activate
+uv pip install -e .
 
 # Verify
 agentd --task tasks/example-code-review.yml --dry-run
@@ -23,7 +29,6 @@ cp tasks/example-gpu-eval.yml queue/
 ```
 
 Prerequisites:
-- Python 3.10+
 - `oc` logged into the OpenShift cluster (`oc login ...`)
 - [devenv](https://github.com/neuralmagic/devenv) repo cloned (for `launch.sh`)
 - Vertex AI auth (`CLAUDE_CODE_USE_VERTEX=1`) or `ANTHROPIC_API_KEY` set
@@ -31,7 +36,9 @@ Prerequisites:
 ## Install
 
 ```bash
-pip install -e .
+uv venv --python 3.12 .venv
+source .venv/bin/activate
+uv pip install -e .
 ```
 
 ## Usage
