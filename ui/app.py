@@ -34,6 +34,25 @@ def _read_first_last(path: str) -> tuple[dict | None, dict | None]:
 
 def _list_runs() -> list[dict]:
     runs = []
+
+    for path in sorted(glob.glob(os.path.join(QUEUE_DIR, "*.yml")), reverse=True):
+        from agentd.config import load_task
+        try:
+            task = load_task(path)
+            task_name = task.name
+        except Exception:
+            task_name = Path(path).stem
+        runs.append({
+            "run_id": None,
+            "run_id_short": "-",
+            "task": task_name,
+            "started": "",
+            "status": "queued",
+            "cost": None,
+            "turns": None,
+            "duration": None,
+        })
+
     for path in sorted(glob.glob(os.path.join(LOG_DIR, "*.jsonl")), reverse=True):
         run_id = Path(path).stem
         first, last = _read_first_last(path)
