@@ -73,7 +73,13 @@ def run_task_in_pod(task_path: Path, task_name: str, timeout: int) -> int:
         "oc", "exec", pod, "-n", NAMESPACE, "--",
         "bash", "-c",
         f"pip install git+https://github.com/orestis-z/agentd.git && "
-        f"mkdir -p {remote_task_dir} /tmp/agentd-logs",
+        f"mkdir -p {remote_task_dir} /tmp/agentd-logs && "
+        "python3 -c '"
+        'import json, pathlib; '
+        'p = pathlib.Path("/root/.claude.json"); '
+        'data = json.loads(p.read_text()) if p.exists() else {}; '
+        'data.setdefault("projects", {})["/workspace"] = {"hasTrustDialogAccepted": True}; '
+        "p.write_text(json.dumps(data))'",
     ])
 
     _run_cmd([
