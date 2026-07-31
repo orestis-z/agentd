@@ -59,6 +59,8 @@ Tasks are YAML files:
 name: fix-flaky-test
 prompt: |
   Find and fix flaky tests. Run pytest to verify. Commit the fix.
+skill: pr-review                    # optional (name, path, or URL)
+skill_args: "123"                   # optional (passed to skill as arguments)
 system_prompt: |                    # optional
   You are a developer working on speculators.
 allowed_tools:                      # optional (defaults to all)
@@ -77,7 +79,30 @@ gpu_type: h100                      # optional (orchestrator)
 timeout: 3600                       # optional (orchestrator, seconds)
 ```
 
-Required fields: `name`, `prompt`. The `gpus`, `gpu_type`, and `timeout` fields are used by the orchestrator to provision pods with the right resources.
+Required fields: `name`, and either `prompt` or `skill` (or both). The `gpus`, `gpu_type`, and `timeout` fields are used by the orchestrator to provision pods with the right resources.
+
+### Skills
+
+The `skill` field resolves a skill definition and injects it as `system_prompt`:
+
+- **Name** — looks up `~/.claude/skills/<name>/SKILL.md`
+- **Local path** — reads the file directly (tilde `~` is expanded)
+- **URL** — fetches the content; GitHub blob URLs are auto-converted to raw URLs
+
+```yaml
+# By name
+skill: pr-review
+
+# By local path
+skill: ~/repos/speculators/.claude/skills/pr-review/SKILL.md
+
+# By URL
+skill: https://github.com/vllm-project/speculators/blob/main/.claude/skills/pr-review/SKILL.md
+```
+
+When both `skill` and `system_prompt` are set, the skill content is prepended. `skill_args` are appended to the prompt (e.g., `Skill arguments: 123`).
+
+The orchestrator resolves skills on the bastion before copying the task into the pod, so skill files don't need to exist inside the container.
 
 ## Security
 
@@ -186,40 +211,40 @@ agentd --task tasks/fix-test.yml
 
 ## Web UI
 
-A lightweight Flask UI for managing runs and querying logs.
+A lightweight Flask UI for managing runs, launching tasks, and inspecting logs.
 
-### Local
+### Running locally
 
 ```bash
-cd ui
-pip install flask claude-agent-sdk pyyaml
-AGENTD_LOG_DIR=../logs AGENTD_TASK_DIR=../tasks python app.py
+pip install flask pyyaml
+
+# Point at the same dirs the orchestrator uses
+export AGENTD_LOG_DIR=./logs        # where run JSONL logs live
+export AGENTD_TASK_DIR=./tasks      # task YAML templates
+export AGENTD_QUEUE_DIR=./queue     # orchestrator queue directory
+
+python ui/app.py
 ```
 
 Open `http://localhost:5000`.
 
-### Docker
+### Environment variables
 
-```bash
-docker build -t agentd-ui ui/
-docker run -p 5000:5000 \
-  -v ./logs:/data/logs -e AGENTD_LOG_DIR=/data/logs \
-  -v ./tasks:/tasks -e AGENTD_TASK_DIR=/tasks \
-  agentd-ui
-```
-
-### OpenShift
-
-```bash
-export NAMESPACE=machine-learning
-envsubst < k8s/ui-deployment.yml | oc apply -f -
-```
+| Variable | Default | Description |
+|---|---|---|
+| `AGENTD_LOG_DIR` | `./logs` | Directory containing `<run_id>.jsonl` log files |
+| `AGENTD_TASK_DIR` | `./tasks` | Directory containing task YAML templates |
+| `AGENTD_QUEUE_DIR` | `./queue` | Directory where queued tasks are written |
+| `FLASK_DEBUG` | `0` | Set to `1` for auto-reload during development |
+| `SECRET_KEY` | `agentd-ui-dev-key` | Flask session secret (change in production) |
 
 ### Features
 
-- **Run list** — view past and active runs with status, cost, and duration
-- **Run detail** — tool call timeline, error info, and metadata for each run
-- **Launch** — start a new run from the available task definitions
+- **Run list** — all runs with status, model, GPUs, cost, turns, and duration; filterable by task name
+- **Run detail** — tool call timeline, result text, error info with collapsible traceback, and syntax-highlighted raw JSONL log
+- **Interactive launch** — create and queue tasks from the UI with template pre-fill; supports prompt, skill, model, GPUs, and advanced options
+- **Skill support** — specify a skill by name, local path, or URL; resolved and injected as system prompt
+- **Delete** — remove run logs from the list or detail view
 
 ## Architecture
 
