@@ -90,9 +90,9 @@ async def run(task_path: str, dry_run: bool = False) -> int:
         result_text = ""
         result_metadata = {}
 
+        prompt = task.prompt or "Follow the instructions in the system prompt."
         try:
-            prompt = task.prompt or "Follow the instructions in the system prompt."
-        async for msg in query(prompt=prompt, options=options):
+            async for msg in query(prompt=prompt, options=options):
                 if hasattr(msg, "result"):
                     result_metadata = {
                         "num_turns": getattr(msg, "num_turns", None),

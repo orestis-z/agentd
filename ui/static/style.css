@@ -209,7 +209,4 @@ details summary:hover { color: #c9d1d9; }
     white-space: pre-wrap;
     word-wrap: break-word;
 }
-.j-key { color: #79c0ff; }
-.j-str { color: #a5d6ff; }
-.j-num { color: #d2a8ff; }
-.j-lit { color: #ff7b72; }
+.log-event-json code { background: transparent; padding: 0; font-size: inherit; }

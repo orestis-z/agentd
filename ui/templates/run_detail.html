@@ -79,21 +79,9 @@
     {% for ev in raw_events %}
     <details class="log-event">
         <summary><span class="log-event-type">{{ ev.event }}</span> <span class="muted">{{ ev.ts }}</span></summary>
-        <pre class="log-event-json">{{ ev.json }}</pre>
+        <pre class="log-event-json"><code class="language-json">{{ ev.json }}</code></pre>
     </details>
     {% endfor %}
 </section>
-<script>
-document.querySelectorAll('.log-event-json').forEach(function(el) {
-    el.innerHTML = el.textContent.replace(
-        /("(?:\\.|[^"\\])*")\s*:/g, '<span class="j-key">$1</span>:'
-    ).replace(
-        /:\s*("(?:\\.|[^"\\])*")/g, ': <span class="j-str">$1</span>'
-    ).replace(
-        /:\s*(\d+\.?\d*)\b/g, ': <span class="j-num">$1</span>'
-    ).replace(
-        /:\s*(true|false|null)\b/g, ': <span class="j-lit">$1</span>'
-    );
-});
-</script>
+<script>hljs.highlightAll();</script>
 {% endblock %}
