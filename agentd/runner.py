@@ -94,31 +94,20 @@ async def run(task_path: str, dry_run: bool = False) -> int:
         turn = 0
         try:
             async for msg in query(prompt=prompt, options=options):
-                msg_type = getattr(msg, "type", None) or (msg.get("type") if isinstance(msg, dict) else None)
-                content = getattr(msg, "content", None) or (msg.get("content") if isinstance(msg, dict) else None)
-                if msg_type == "assistant" and content:
+                content = getattr(msg, "content", None)
+                if content is not None and isinstance(content, list):
                     turn += 1
                     text_parts = []
                     tool_calls = []
                     for block in content:
-                        if isinstance(block, dict):
-                            block_type = block.get("type")
-                            if block_type == "text":
-                                text_parts.append(block.get("text", ""))
-                            elif block_type == "tool_use":
-                                tool_calls.append({
-                                    "tool": block.get("name", ""),
-                                    "input": block.get("input"),
-                                })
-                        else:
-                            block_type = getattr(block, "type", None)
-                            if block_type == "text":
-                                text_parts.append(block.text)
-                            elif block_type == "tool_use":
-                                tool_calls.append({
-                                    "tool": block.name,
-                                    "input": block.input,
-                                })
+                        cls = type(block).__name__
+                        if cls == "TextBlock" or (isinstance(block, dict) and block.get("type") == "text"):
+                            text_parts.append(getattr(block, "text", "") or (block.get("text", "") if isinstance(block, dict) else ""))
+                        elif cls == "ToolUseBlock" or (isinstance(block, dict) and block.get("type") == "tool_use"):
+                            tool_calls.append({
+                                "tool": getattr(block, "name", "") or (block.get("name", "") if isinstance(block, dict) else ""),
+                                "input": getattr(block, "input", None) or (block.get("input") if isinstance(block, dict) else None),
+                            })
                     _log({
                         "event": "assistant_message",
                         "turn": turn,
