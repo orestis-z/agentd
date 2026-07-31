@@ -203,11 +203,14 @@ def run_detail(run_id):
             "traceback": result.get("traceback"),
         }
 
+    result_text = result.get("result") if result else None
+
     return render_template(
         "run_detail.html",
         run=run_info,
         timeline=timeline,
         error_info=error_info,
+        result_text=result_text,
     )
 
 

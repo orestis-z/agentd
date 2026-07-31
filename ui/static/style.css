@@ -160,6 +160,16 @@ details { margin-top: 8px; }
 details summary { color: #8b949e; cursor: pointer; font-size: 13px; }
 details summary:hover { color: #c9d1d9; }
 
+.result-pre {
+    background: #161b22;
+    padding: 16px;
+    border-radius: 6px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin-top: 8px;
+    font-size: 14px;
+}
+
 .timeline-table { font-size: 13px; }
 .timeline-table .ts-col { white-space: nowrap; color: #8b949e; }
 .timeline-table .detail-col {

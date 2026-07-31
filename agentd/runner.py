@@ -87,14 +87,15 @@ async def run(task_path: str, dry_run: bool = False) -> int:
                         "total_cost_usd": getattr(msg, "total_cost_usd", None),
                         "duration_ms": getattr(msg, "duration_ms", None),
                     }
+                    result_text = msg.result
                     _log({
                         "event": "task_result",
                         "task": task.name,
                         "is_error": getattr(msg, "is_error", False),
                         "subtype": getattr(msg, "subtype", None),
+                        "result": result_text,
                         **result_metadata,
                     })
-                    result_text = msg.result
                     print(result_text)
                     exit_code = 1 if getattr(msg, "is_error", False) else 0
         except Exception as exc:

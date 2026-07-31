@@ -26,6 +26,13 @@
     </form>
 </div>
 
+{% if result_text %}
+<section>
+    <h2>Result</h2>
+    <pre class="result-pre">{{ result_text }}</pre>
+</section>
+{% endif %}
+
 {% if error_info %}
 <section class="error-section">
     <h2>Error</h2>
