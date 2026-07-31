@@ -15,9 +15,11 @@
 <dl class="run-info">
     <dt>Run ID</dt><dd><code>{{ run.run_id }}</code></dd>
     <dt>Started</dt><dd>{{ run.started }}{% if run.started_raw %} <span class="muted">({{ run.started_raw }})</span>{% endif %}</dd>
+    {% if run.model %}<dt>Model</dt><dd>{{ run.model }}</dd>{% endif %}
+    {% if run.gpus is not none %}<dt>GPUs</dt><dd>{{ run.gpus }}{% if run.gpu_type %} x {{ run.gpu_type }}{% endif %}</dd>{% endif %}
     {% if run.duration %}<dt>Duration</dt><dd>{{ run.duration }}</dd>{% endif %}
-    {% if run.cost is not none %}<dt>Cost</dt><dd>${{ "%.2f"|format(run.cost) }}</dd>{% endif %}
-    {% if run.turns %}<dt>Turns</dt><dd>{{ run.turns }}</dd>{% endif %}
+    {% if run.cost is not none %}<dt>Cost</dt><dd>${{ "%.2f"|format(run.cost) }}{% if run.max_budget_usd %} <span class="muted">/ ${{ "%.2f"|format(run.max_budget_usd) }}</span>{% endif %}</dd>{% endif %}
+    {% if run.turns %}<dt>Turns</dt><dd>{{ run.turns }}{% if run.max_turns %} <span class="muted">/ {{ run.max_turns }}</span>{% endif %}</dd>{% endif %}
 </dl>
 
 <div class="detail-actions">

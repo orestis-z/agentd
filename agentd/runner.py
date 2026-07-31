@@ -55,7 +55,16 @@ async def run(task_path: str, dry_run: bool = False) -> int:
     hooks._log_file = open(log_path, "w")
 
     try:
-        _log({"event": "task_start", "task": task.name, "prompt": task.prompt[:200]})
+        _log({
+            "event": "task_start",
+            "task": task.name,
+            "prompt": task.prompt[:200],
+            "model": task.model,
+            "gpus": task.gpus,
+            "gpu_type": task.gpu_type,
+            "max_turns": task.max_turns,
+            "max_budget_usd": task.max_budget_usd,
+        })
 
         options = ClaudeAgentOptions(
             permission_mode="bypassPermissions",
