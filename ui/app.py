@@ -71,7 +71,7 @@ def _read_all_events(path: str) -> list[dict]:
 def _list_runs() -> list[dict]:
     runs = []
 
-    for path in sorted(glob.glob(os.path.join(QUEUE_DIR, "*.yml")), reverse=True):
+    for path in glob.glob(os.path.join(QUEUE_DIR, "*.yml")):
         from agentd.config import load_task
         try:
             task = load_task(path)
@@ -83,13 +83,14 @@ def _list_runs() -> list[dict]:
             "run_id_short": "-",
             "task": task_name,
             "started": "",
+            "started_raw": "",
             "status": "queued",
             "cost": None,
             "turns": None,
             "duration": None,
         })
 
-    for path in sorted(glob.glob(os.path.join(LOG_DIR, "*.jsonl")), reverse=True):
+    for path in glob.glob(os.path.join(LOG_DIR, "*.jsonl")):
         run_id = Path(path).stem
         first, last = _read_first_last(path)
         if not first:
@@ -99,6 +100,7 @@ def _list_runs() -> list[dict]:
             "run_id_short": run_id[:8],
             "task": first.get("task", "unknown"),
             "started": _format_ts(first.get("ts", "")),
+            "started_raw": first.get("ts", ""),
             "model": first.get("model"),
             "gpus": first.get("gpus"),
             "gpu_type": first.get("gpu_type"),
@@ -114,6 +116,8 @@ def _list_runs() -> list[dict]:
             if last.get("duration_ms") is not None:
                 run["duration"] = f"{last['duration_ms'] / 60_000:.1f}m"
         runs.append(run)
+
+    runs.sort(key=lambda r: r.get("started_raw") or "", reverse=True)
     return runs
 
 
