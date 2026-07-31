@@ -70,6 +70,8 @@ async def run(task_path: str, dry_run: bool = False) -> int:
             options.max_budget_usd = task.max_budget_usd
         if task.cwd:
             options.cwd = task.cwd
+        if task.model:
+            options.model = task.model
         options.hooks = {
             "PreToolUse": [{"callback": security_hook}],
             "PostToolUse": [{"callback": logging_hook}],

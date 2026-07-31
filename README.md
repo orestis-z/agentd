@@ -68,6 +68,7 @@ allowed_tools:                      # optional (defaults to all)
   - Edit
   - Glob
   - Grep
+model: sonnet                       # optional (opus, sonnet, haiku)
 max_turns: 50                       # optional
 max_budget_usd: 5.0                 # optional
 cwd: /workspace/speculators         # optional
