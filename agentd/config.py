@@ -21,7 +21,7 @@ class NotifyConfig:
 @dataclass
 class TaskConfig:
     name: str
-    prompt: str
+    prompt: str = ""
     skill: str | None = None
     skill_args: str | None = None
     system_prompt: str | None = None
@@ -50,7 +50,7 @@ def resolve_skill(ref: str) -> str:
         with urllib.request.urlopen(raw_url) as resp:
             return resp.read().decode()
 
-    ref_path = Path(ref)
+    ref_path = Path(os.path.expanduser(ref))
     if ref_path.is_file():
         return ref_path.read_text()
 
@@ -69,9 +69,10 @@ def load_task(path: str | Path) -> TaskConfig:
 
     if not isinstance(data, dict):
         raise ValueError(f"{path}: expected a YAML mapping")
-    for key in ("name", "prompt"):
-        if key not in data:
-            raise ValueError(f"{path}: missing required field '{key}'")
+    if "name" not in data:
+        raise ValueError(f"{path}: missing required field 'name'")
+    if "prompt" not in data and "skill" not in data:
+        raise ValueError(f"{path}: requires 'prompt' or 'skill'")
 
     notify = None
     if "notify" in data:
@@ -95,7 +96,7 @@ def load_task(path: str | Path) -> TaskConfig:
         else:
             system_prompt = skill_content
 
-    prompt = data["prompt"]
+    prompt = data.get("prompt", "")
     if skill_args:
         prompt = f"{prompt}\n\nSkill arguments: {skill_args}"
 

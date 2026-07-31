@@ -95,9 +95,9 @@ def test_load_missing_name(tmp_path):
         load_task(p)
 
 
-def test_load_missing_prompt(tmp_path):
+def test_load_missing_prompt_and_skill(tmp_path):
     p = _write_yaml(tmp_path, "name: test\n")
-    with pytest.raises(ValueError, match="prompt"):
+    with pytest.raises(ValueError, match="prompt.*skill"):
         load_task(p)
 
 
@@ -121,6 +121,19 @@ def test_load_infra_fields_default_none(tmp_path):
     assert task.gpus is None
     assert task.gpu_type is None
     assert task.timeout is None
+
+
+def test_load_skill_only_no_prompt(tmp_path):
+    skill_file = tmp_path / "my_skill.md"
+    skill_file.write_text("You are a code reviewer.")
+    p = _write_yaml(tmp_path, f"""
+name: skill-only
+skill: {skill_file}
+""")
+    task = load_task(p)
+    assert task.name == "skill-only"
+    assert task.prompt == ""
+    assert task.system_prompt == "You are a code reviewer."
 
 
 def test_load_skill_local(tmp_path):

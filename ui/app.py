@@ -150,13 +150,14 @@ def api_template(filename):
 def launch():
     name = request.form.get("name", "").strip()
     prompt = request.form.get("prompt", "").strip()
-    if not name or not prompt:
-        flash("Name and prompt are required.", "error")
+    skill = request.form.get("skill", "").strip()
+    if not name or (not prompt and not skill):
+        flash("Name and either prompt or skill are required.", "error")
         return redirect(url_for("index"))
 
-    task_data = {"name": name, "prompt": prompt}
-
-    skill = request.form.get("skill", "").strip()
+    task_data = {"name": name}
+    if prompt:
+        task_data["prompt"] = prompt
     if skill:
         task_data["skill"] = skill
         skill_args = request.form.get("skill_args", "").strip()

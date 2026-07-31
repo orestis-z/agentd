@@ -19,7 +19,7 @@
             <input type="text" name="name" id="f-name" required placeholder="my-task">
         </div>
         <div class="form-row">
-            <label>Prompt *</label>
+            <label id="prompt-label">Prompt *</label>
             <textarea name="prompt" id="f-prompt" required rows="3" placeholder="Describe what the agent should do..."></textarea>
         </div>
         <div class="form-row">
@@ -195,7 +195,10 @@ function loadTemplate(filename) {
 }
 
 document.getElementById('f-skill').addEventListener('input', function() {
-    document.getElementById('skill-args-row').style.display = this.value.trim() ? '' : 'none';
+    var hasSkill = this.value.trim();
+    document.getElementById('skill-args-row').style.display = hasSkill ? '' : 'none';
+    document.getElementById('f-prompt').required = !hasSkill;
+    document.getElementById('prompt-label').textContent = hasSkill ? 'Prompt' : 'Prompt *';
 });
 </script>
 {% endblock %}
