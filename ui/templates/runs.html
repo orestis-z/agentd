@@ -40,7 +40,7 @@
         </thead>
         <tbody>
             {% for run in runs %}
-            <tr class="status-{{ run.status }}" data-task="{{ run.task }}">
+            <tr class="status-{{ run.status }}{% if run.run_id %} clickable-row{% endif %}" data-task="{{ run.task }}"{% if run.run_id %} onclick="window.location='{{ url_for('run_detail', run_id=run.run_id) }}'"{% endif %}>
                 <td><code>{{ run.run_id_short }}</code></td>
                 <td>{{ run.task }}</td>
                 <td>{{ run.started }}</td>

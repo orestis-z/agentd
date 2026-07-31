@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title_suffix %} — {{ run.task }}{% endblock %}
+{% block content %}
+<h1>
+    {{ run.task }}
+    {% if run.status == 'success' %}
+    <span class="badge success">success</span>
+    {% elif run.status == 'failed' %}
+    <span class="badge failed">failed</span>
+    {% else %}
+    <span class="badge running">running</span>
+    {% endif %}
+</h1>
+
+<dl class="run-info">
+    <dt>Run ID</dt><dd><code>{{ run.run_id }}</code></dd>
+    <dt>Started</dt><dd>{{ run.started }}{% if run.started_raw %} <span class="muted">({{ run.started_raw }})</span>{% endif %}</dd>
+    {% if run.duration %}<dt>Duration</dt><dd>{{ run.duration }}</dd>{% endif %}
+    {% if run.cost is not none %}<dt>Cost</dt><dd>${{ "%.2f"|format(run.cost) }}</dd>{% endif %}
+    {% if run.turns %}<dt>Turns</dt><dd>{{ run.turns }}</dd>{% endif %}
+</dl>
+
+<div class="detail-actions">
+    <a href="{{ url_for('ask', run_id=run.run_id) }}" class="btn">Ask why</a>
+    <form method="POST" action="{{ url_for('delete', run_id=run.run_id) }}" style="display:inline" onsubmit="return confirm('Delete logs for run {{ run.run_id_short }}?')">
+        <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+</div>
+
+{% if error_info %}
+<section class="error-section">
+    <h2>Error</h2>
+    <pre class="error-pre">{{ error_info.error }}</pre>
+    {% if error_info.traceback %}
+    <details>
+        <summary>Traceback</summary>
+        <pre class="error-pre">{{ error_info.traceback }}</pre>
+    </details>
+    {% endif %}
+</section>
+{% endif %}
+
+<section>
+    <h2>Timeline ({{ timeline|length }} events)</h2>
+    {% if timeline %}
+    <table class="timeline-table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Tool</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in timeline %}
+            <tr class="{% if event.event == 'security_deny' %}security-deny{% endif %}">
+                <td class="ts-col">{{ event.ts }}</td>
+                <td><code>{{ event.tool }}</code></td>
+                <td class="detail-col">{{ event.detail }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No tool calls recorded yet.</p>
+    {% endif %}
+</section>
+{% endblock %}

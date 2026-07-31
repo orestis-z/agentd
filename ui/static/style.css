@@ -118,6 +118,59 @@ button:hover { background: #2ea043; }
 
 .run-info dt { color: #8b949e; }
 
+.clickable-row { cursor: pointer; }
+.clickable-row:hover { background: #161b22; }
+
+.muted { color: #8b949e; font-size: 13px; }
+
+.detail-actions { margin-bottom: 24px; }
+
+.btn {
+    display: inline-block;
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    margin-right: 8px;
+}
+
+.btn:hover { background: #30363d; text-decoration: none; }
+
+.btn-danger { color: #f85149; }
+.btn-danger:hover { background: #4a1520; }
+
+.error-section { margin-bottom: 24px; }
+
+.error-pre {
+    background: #2d1b1b;
+    color: #f85149;
+    padding: 12px;
+    border-radius: 6px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+details { margin-top: 8px; }
+details summary { color: #8b949e; cursor: pointer; font-size: 13px; }
+details summary:hover { color: #c9d1d9; }
+
+.timeline-table { font-size: 13px; }
+.timeline-table .ts-col { white-space: nowrap; color: #8b949e; }
+.timeline-table .detail-col {
+    max-width: 500px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.timeline-table tr.security-deny { background: #2d1b1b; }
+.timeline-table tr.security-deny td { color: #f85149; }
+
 .answer pre {
     background: #161b22;
     padding: 16px;

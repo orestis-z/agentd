@@ -6,6 +6,8 @@ import shutil
 import glob
 from pathlib import Path
 
+from datetime import datetime, timezone
+
 from flask import Flask, flash, redirect, render_template, request, url_for
 
 app = Flask(__name__)
@@ -14,6 +16,28 @@ app.secret_key = os.environ.get("SECRET_KEY", "agentd-ui-dev-key")
 LOG_DIR = os.environ.get("AGENTD_LOG_DIR", "./logs")
 TASK_DIR = os.environ.get("AGENTD_TASK_DIR", "./tasks")
 QUEUE_DIR = os.environ.get("AGENTD_QUEUE_DIR", "./queue")
+
+
+def _format_ts(ts: str) -> str:
+    if not ts:
+        return ""
+    try:
+        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        now = datetime.now(timezone.utc)
+        delta = now - dt
+        if delta.total_seconds() < 60:
+            return "just now"
+        if delta.total_seconds() < 3600:
+            mins = int(delta.total_seconds() / 60)
+            return f"{mins}m ago"
+        if delta.total_seconds() < 86400:
+            hours = int(delta.total_seconds() / 3600)
+            return f"{hours}h ago"
+        if delta.days < 7:
+            return dt.strftime("%a %H:%M")
+        return dt.strftime("%b %d, %H:%M")
+    except (ValueError, TypeError):
+        return ts
 
 
 def _read_first_last(path: str) -> tuple[dict | None, dict | None]:
@@ -30,6 +54,14 @@ def _read_first_last(path: str) -> tuple[dict | None, dict | None]:
             last = parsed
             break
     return first, last
+
+
+def _read_all_events(path: str) -> list[dict]:
+    try:
+        with open(path) as f:
+            return [json.loads(line) for line in f if line.strip()]
+    except OSError:
+        return []
 
 
 def _list_runs() -> list[dict]:
@@ -62,7 +94,7 @@ def _list_runs() -> list[dict]:
             "run_id": run_id,
             "run_id_short": run_id[:8],
             "task": first.get("task", "unknown"),
-            "started": first.get("ts", ""),
+            "started": _format_ts(first.get("ts", "")),
             "status": "running",
             "cost": None,
             "turns": None,
@@ -121,6 +153,64 @@ def delete(run_id):
     return redirect(url_for("index"))
 
 
+@app.route("/run/<run_id>")
+def run_detail(run_id):
+    log_path = os.path.join(LOG_DIR, f"{run_id}.jsonl")
+    if not os.path.isfile(log_path):
+        flash("Run not found.", "error")
+        return redirect(url_for("index"))
+
+    events = _read_all_events(log_path)
+    first = events[0] if events else {}
+
+    result = None
+    for e in reversed(events):
+        if e.get("event") == "task_result":
+            result = e
+            break
+
+    status = "running"
+    if result:
+        status = "failed" if result.get("is_error") else "success"
+
+    run_info = {
+        "run_id": run_id,
+        "run_id_short": run_id[:8],
+        "task": first.get("task", "unknown"),
+        "started": _format_ts(first.get("ts", "")),
+        "started_raw": first.get("ts", ""),
+        "status": status,
+        "cost": result.get("total_cost_usd") if result else None,
+        "turns": result.get("num_turns") if result else None,
+        "duration": f"{result['duration_ms'] / 60_000:.1f}m" if result and result.get("duration_ms") else None,
+    }
+
+    timeline = []
+    for e in events:
+        ev = e.get("event")
+        if ev in ("tool_use", "security_deny"):
+            timeline.append({
+                "ts": _format_ts(e.get("ts", "")),
+                "event": ev,
+                "tool": e.get("tool", ""),
+                "detail": e.get("input", "") if ev == "tool_use" else e.get("reason", ""),
+            })
+
+    error_info = None
+    if result and result.get("is_error"):
+        error_info = {
+            "error": result.get("error", "Unknown error"),
+            "traceback": result.get("traceback"),
+        }
+
+    return render_template(
+        "run_detail.html",
+        run=run_info,
+        timeline=timeline,
+        error_info=error_info,
+    )
+
+
 @app.route("/ask/<run_id>", methods=["GET", "POST"])
 def ask(run_id):
     log_path = os.path.join(LOG_DIR, f"{run_id}.jsonl")
@@ -133,7 +223,7 @@ def ask(run_id):
         "run_id": run_id,
         "run_id_short": run_id[:8],
         "task": first.get("task", "unknown") if first else "unknown",
-        "started": first.get("ts", "") if first else "",
+        "started": _format_ts(first.get("ts", "")) if first else "",
     }
 
     answer = None
