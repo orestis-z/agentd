@@ -30,6 +30,8 @@
             <tr>
                 <th>Run ID</th>
                 <th>Task</th>
+                <th>Model</th>
+                <th>GPUs</th>
                 <th>Started</th>
                 <th>Status</th>
                 <th>Cost</th>
@@ -43,6 +45,8 @@
             <tr class="status-{{ run.status }}{% if run.run_id %} clickable-row{% endif %}" data-task="{{ run.task }}"{% if run.run_id %} onclick="window.location='{{ url_for('run_detail', run_id=run.run_id) }}'"{% endif %}>
                 <td><code>{{ run.run_id_short }}</code></td>
                 <td>{{ run.task }}</td>
+                <td>{{ run.model or "-" }}</td>
+                <td>{% if run.gpus is not none %}{{ run.gpus }}{% if run.gpu_type %} x {{ run.gpu_type }}{% endif %}{% else %}-{% endif %}</td>
                 <td>{{ run.started }}</td>
                 <td>
                     {% if run.status == 'success' %}
@@ -67,7 +71,7 @@
                 </td>
             </tr>
             {% else %}
-            <tr><td colspan="8">No runs yet.</td></tr>
+            <tr><td colspan="10">No runs yet.</td></tr>
             {% endfor %}
         </tbody>
     </table>
