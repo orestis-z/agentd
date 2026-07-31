@@ -8,7 +8,8 @@ from pathlib import Path
 
 from datetime import datetime, timezone
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+import yaml
+from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "agentd-ui-dev-key")
@@ -135,21 +136,80 @@ def index():
     return render_template("runs.html", runs=runs, tasks=_list_tasks(), task_names=task_names)
 
 
+@app.route("/api/template/<filename>")
+def api_template(filename):
+    task_path = os.path.join(TASK_DIR, filename)
+    if not os.path.isfile(task_path):
+        return jsonify({}), 404
+    with open(task_path) as f:
+        data = yaml.safe_load(f) or {}
+    return jsonify(data)
+
+
 @app.route("/launch", methods=["POST"])
 def launch():
-    task_name = request.form.get("task")
-    if not task_name:
-        flash("No task selected.", "error")
+    name = request.form.get("name", "").strip()
+    prompt = request.form.get("prompt", "").strip()
+    if not name or not prompt:
+        flash("Name and prompt are required.", "error")
         return redirect(url_for("index"))
 
-    task_path = os.path.join(TASK_DIR, task_name)
-    if not os.path.isfile(task_path):
-        flash(f"Task file not found: {task_name}", "error")
-        return redirect(url_for("index"))
+    task_data = {"name": name, "prompt": prompt}
 
+    model = request.form.get("model", "").strip()
+    if model:
+        task_data["model"] = model
+
+    system_prompt = request.form.get("system_prompt", "").strip()
+    if system_prompt:
+        task_data["system_prompt"] = system_prompt
+
+    try:
+        gpus = int(request.form.get("gpus", "0"))
+        task_data["gpus"] = gpus
+    except ValueError:
+        pass
+
+    gpu_type = request.form.get("gpu_type", "").strip()
+    if gpu_type:
+        task_data["gpu_type"] = gpu_type
+
+    try:
+        max_turns = request.form.get("max_turns", "").strip()
+        if max_turns:
+            task_data["max_turns"] = int(max_turns)
+    except ValueError:
+        pass
+
+    try:
+        max_budget = request.form.get("max_budget_usd", "").strip()
+        if max_budget:
+            task_data["max_budget_usd"] = float(max_budget)
+    except ValueError:
+        pass
+
+    cwd = request.form.get("cwd", "").strip()
+    if cwd:
+        task_data["cwd"] = cwd
+
+    allowed_tools = request.form.get("allowed_tools", "").strip()
+    if allowed_tools:
+        task_data["allowed_tools"] = [t.strip() for t in allowed_tools.split(",") if t.strip()]
+
+    try:
+        timeout = request.form.get("timeout", "").strip()
+        if timeout:
+            task_data["timeout"] = int(timeout)
+    except ValueError:
+        pass
+
+    slug = name.lower().replace(" ", "-").replace("_", "-")
+    filename = f"{slug}.yml"
     os.makedirs(QUEUE_DIR, exist_ok=True)
-    shutil.copy2(task_path, os.path.join(QUEUE_DIR, task_name))
-    flash(f"Queued: {task_name}", "success")
+    with open(os.path.join(QUEUE_DIR, filename), "w") as f:
+        yaml.dump(task_data, f, default_flow_style=False, sort_keys=False)
+
+    flash(f"Queued: {name}", "success")
     return redirect(url_for("index"))
 
 

@@ -74,16 +74,32 @@ a:hover { text-decoration: underline; }
 
 .launch-form { margin-bottom: 24px; }
 
-select, input[type="text"] {
+select, input[type="text"], input[type="number"], textarea {
     background: #161b22;
     color: #c9d1d9;
     border: 1px solid #30363d;
     padding: 8px 12px;
     border-radius: 6px;
     font-size: 14px;
+    font-family: inherit;
 }
 
-input[type="text"] { width: 60%; }
+textarea { width: 100%; resize: vertical; }
+
+.form-row { margin-bottom: 10px; }
+.form-row label { display: block; color: #8b949e; font-size: 13px; margin-bottom: 2px; }
+.form-row input[type="text"],
+.form-row input[type="number"],
+.form-row select { width: 100%; }
+
+.form-row-group { display: flex; gap: 12px; }
+.form-row-group .form-row { flex: 1; }
+
+.form-advanced { margin: 8px 0 12px; }
+.form-advanced summary { color: #8b949e; cursor: pointer; font-size: 13px; margin-bottom: 8px; }
+.form-advanced summary:hover { color: #c9d1d9; }
+
+#launch-form button[type="submit"] { margin-top: 4px; margin-left: 0; }
 
 button {
     background: #238636;

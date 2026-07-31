@@ -4,14 +4,76 @@
 
 <section class="launch-form">
     <h2>Launch</h2>
-    <form method="POST" action="{{ url_for('launch') }}">
-        <select name="task" required>
-            <option value="">Select task...</option>
-            {% for task in tasks %}
-            <option value="{{ task }}">{{ task }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit">Run</button>
+    <form method="POST" action="{{ url_for('launch') }}" id="launch-form">
+        <div class="form-row">
+            <label>Template</label>
+            <select id="template-select" onchange="loadTemplate(this.value)">
+                <option value="">Blank</option>
+                {% for task in tasks %}
+                <option value="{{ task }}">{{ task }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Name *</label>
+            <input type="text" name="name" id="f-name" required placeholder="my-task">
+        </div>
+        <div class="form-row">
+            <label>Prompt *</label>
+            <textarea name="prompt" id="f-prompt" required rows="3" placeholder="Describe what the agent should do..."></textarea>
+        </div>
+        <div class="form-row-group">
+            <div class="form-row">
+                <label>Model</label>
+                <select name="model" id="f-model">
+                    <option value="">default</option>
+                    <option value="sonnet">sonnet</option>
+                    <option value="opus">opus</option>
+                    <option value="haiku">haiku</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>GPUs</label>
+                <input type="number" name="gpus" id="f-gpus" value="0" min="0" max="8">
+            </div>
+            <div class="form-row">
+                <label>GPU Type</label>
+                <select name="gpu_type" id="f-gpu_type">
+                    <option value="a100">a100</option>
+                    <option value="h100">h100</option>
+                </select>
+            </div>
+        </div>
+        <details class="form-advanced">
+            <summary>Advanced</summary>
+            <div class="form-row-group">
+                <div class="form-row">
+                    <label>Max turns</label>
+                    <input type="number" name="max_turns" id="f-max_turns" min="1" placeholder="50">
+                </div>
+                <div class="form-row">
+                    <label>Max budget ($)</label>
+                    <input type="number" name="max_budget_usd" id="f-max_budget_usd" min="0" step="0.5" placeholder="5.0">
+                </div>
+                <div class="form-row">
+                    <label>Timeout (s)</label>
+                    <input type="number" name="timeout" id="f-timeout" min="0" placeholder="3600">
+                </div>
+            </div>
+            <div class="form-row">
+                <label>CWD</label>
+                <input type="text" name="cwd" id="f-cwd" placeholder="/workspace/speculators">
+            </div>
+            <div class="form-row">
+                <label>System prompt</label>
+                <textarea name="system_prompt" id="f-system_prompt" rows="2" placeholder="Optional system prompt..."></textarea>
+            </div>
+            <div class="form-row">
+                <label>Allowed tools</label>
+                <input type="text" name="allowed_tools" id="f-allowed_tools" placeholder="Bash, Read, Write, Edit (comma-separated, blank = all)">
+            </div>
+        </details>
+        <button type="submit">Queue</button>
     </form>
 </section>
 
@@ -83,6 +145,38 @@ function filterRuns() {
     rows.forEach(function(row) {
         row.style.display = (!sel || row.dataset.task === sel) ? '' : 'none';
     });
+}
+
+function loadTemplate(filename) {
+    if (!filename) {
+        document.getElementById('f-name').value = '';
+        document.getElementById('f-prompt').value = '';
+        document.getElementById('f-model').value = '';
+        document.getElementById('f-gpus').value = '0';
+        document.getElementById('f-gpu_type').value = 'a100';
+        document.getElementById('f-max_turns').value = '';
+        document.getElementById('f-max_budget_usd').value = '';
+        document.getElementById('f-timeout').value = '';
+        document.getElementById('f-cwd').value = '';
+        document.getElementById('f-system_prompt').value = '';
+        document.getElementById('f-allowed_tools').value = '';
+        return;
+    }
+    fetch('{{ url_for("api_template", filename="__PH__") }}'.replace('__PH__', filename))
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            document.getElementById('f-name').value = d.name || '';
+            document.getElementById('f-prompt').value = d.prompt || '';
+            document.getElementById('f-model').value = d.model || '';
+            document.getElementById('f-gpus').value = d.gpus != null ? d.gpus : 0;
+            document.getElementById('f-gpu_type').value = d.gpu_type || 'a100';
+            document.getElementById('f-max_turns').value = d.max_turns || '';
+            document.getElementById('f-max_budget_usd').value = d.max_budget_usd || '';
+            document.getElementById('f-timeout').value = d.timeout || '';
+            document.getElementById('f-cwd').value = d.cwd || '';
+            document.getElementById('f-system_prompt').value = d.system_prompt || '';
+            document.getElementById('f-allowed_tools').value = (d.allowed_tools || []).join(', ');
+        });
 }
 </script>
 {% endblock %}
