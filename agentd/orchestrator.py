@@ -19,7 +19,9 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from agentd.config import load_task
+import yaml
+
+from agentd.config import load_task, resolve_skill
 
 NAMESPACE = os.environ.get("DEVENV_NAMESPACE", "machine-learning")
 DEFAULT_GPU_TYPE = "a100"
@@ -42,6 +44,26 @@ def pod_name(task_name: str) -> str:
 
 def _run_cmd(cmd, **kwargs):
     return subprocess.run(cmd, check=True, **kwargs)
+
+
+def _resolve_task_for_pod(task_path: Path) -> Path:
+    """Resolve skill references on the bastion so the pod doesn't need them."""
+    with task_path.open() as f:
+        data = yaml.safe_load(f)
+    skill_ref = data.get("skill")
+    if not skill_ref:
+        return task_path
+    skill_content = resolve_skill(skill_ref)
+    existing = data.get("system_prompt", "")
+    data["system_prompt"] = (skill_content + "\n\n" + existing) if existing else skill_content
+    del data["skill"]
+    skill_args = data.pop("skill_args", None)
+    if skill_args:
+        data["prompt"] = data.get("prompt", "") + f"\n\nSkill arguments: {skill_args}"
+    resolved = task_path.parent / f".resolved-{task_path.name}"
+    with resolved.open("w") as f:
+        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+    return resolved
 
 
 def provision_pod(task_name: str, gpus: int, gpu_type: str, devenv_dir: Path):
@@ -88,8 +110,9 @@ def run_task_in_pod(task_path: Path, task_name: str, timeout: int) -> int:
         "p.write_text(json.dumps(data))'",
     ])
 
+    resolved_task_path = _resolve_task_for_pod(task_path)
     _run_cmd([
-        "oc", "cp", str(task_path),
+        "oc", "cp", str(resolved_task_path),
         f"{NAMESPACE}/{pod}:{remote_task_path}",
     ])
     _run_cmd([
