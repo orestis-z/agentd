@@ -8,7 +8,7 @@ import os
 import sys
 import uuid
 
-from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, query
+from claude_agent_sdk import ClaudeAgentOptions, query
 
 from agentd.config import load_task
 import agentd.hooks as hooks
@@ -94,19 +94,31 @@ async def run(task_path: str, dry_run: bool = False) -> int:
         turn = 0
         try:
             async for msg in query(prompt=prompt, options=options):
-                if isinstance(msg, AssistantMessage):
+                msg_type = getattr(msg, "type", None) or (msg.get("type") if isinstance(msg, dict) else None)
+                content = getattr(msg, "content", None) or (msg.get("content") if isinstance(msg, dict) else None)
+                if msg_type == "assistant" and content:
                     turn += 1
                     text_parts = []
                     tool_calls = []
-                    for block in msg.content:
-                        block_type = getattr(block, "type", None)
-                        if block_type == "text":
-                            text_parts.append(block.text)
-                        elif block_type == "tool_use":
-                            tool_calls.append({
-                                "tool": block.name,
-                                "input": block.input,
-                            })
+                    for block in content:
+                        if isinstance(block, dict):
+                            block_type = block.get("type")
+                            if block_type == "text":
+                                text_parts.append(block.get("text", ""))
+                            elif block_type == "tool_use":
+                                tool_calls.append({
+                                    "tool": block.get("name", ""),
+                                    "input": block.get("input"),
+                                })
+                        else:
+                            block_type = getattr(block, "type", None)
+                            if block_type == "text":
+                                text_parts.append(block.text)
+                            elif block_type == "tool_use":
+                                tool_calls.append({
+                                    "tool": block.name,
+                                    "input": block.input,
+                                })
                     _log({
                         "event": "assistant_message",
                         "turn": turn,
