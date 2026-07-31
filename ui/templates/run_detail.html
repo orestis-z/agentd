@@ -83,4 +83,17 @@
     </details>
     {% endfor %}
 </section>
+<script>
+document.querySelectorAll('.log-event-json').forEach(function(el) {
+    el.innerHTML = el.textContent.replace(
+        /("(?:\\.|[^"\\])*")\s*:/g, '<span class="j-key">$1</span>:'
+    ).replace(
+        /:\s*("(?:\\.|[^"\\])*")/g, ': <span class="j-str">$1</span>'
+    ).replace(
+        /:\s*(\d+\.?\d*)\b/g, ': <span class="j-num">$1</span>'
+    ).replace(
+        /:\s*(true|false|null)\b/g, ': <span class="j-lit">$1</span>'
+    );
+});
+</script>
 {% endblock %}
