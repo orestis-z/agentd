@@ -108,8 +108,9 @@ async def run(task_path: str, dry_run: bool = False) -> int:
                 "subtype": "crash",
                 "error": str(exc),
                 "traceback": error_text,
+                **result_metadata,
             })
-            result_text = str(exc)
+            result_text = result_text or str(exc)
             print(error_text, file=sys.stderr)
             exit_code = 2
 

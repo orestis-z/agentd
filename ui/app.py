@@ -47,13 +47,17 @@ def _read_first_last(path: str) -> tuple[dict | None, dict | None]:
     except OSError:
         return None, None
     first = json.loads(lines[0]) if lines else None
-    last = None
-    for line in reversed(lines):
+    merged = None
+    for line in lines:
         parsed = json.loads(line)
         if parsed.get("event") == "task_result":
-            last = parsed
-            break
-    return first, last
+            if merged is None:
+                merged = parsed
+            else:
+                for k, v in parsed.items():
+                    if v is not None:
+                        merged[k] = v
+    return first, merged
 
 
 def _read_all_events(path: str) -> list[dict]:
@@ -164,10 +168,14 @@ def run_detail(run_id):
     first = events[0] if events else {}
 
     result = None
-    for e in reversed(events):
+    for e in events:
         if e.get("event") == "task_result":
-            result = e
-            break
+            if result is None:
+                result = e
+            else:
+                for k, v in e.items():
+                    if v is not None:
+                        result[k] = v
 
     status = "running"
     if result:
