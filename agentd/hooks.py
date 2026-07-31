@@ -70,19 +70,10 @@ async def logging_hook(input_data, tool_use_id=None, context=None):
     tool_input = getattr(input_data, "tool_input", None) or input_data.get("tool_input", {})
     session_id = getattr(input_data, "session_id", None) or input_data.get("session_id", "")
 
-    summary = ""
-    if tool_name == "Bash":
-        summary = tool_input.get("command", "")[:200]
-    elif tool_name in ("Read", "Glob", "Grep"):
-        summary = str(tool_input)[:200]
-    elif tool_name in ("Write", "Edit"):
-        path = tool_input.get("file_path", "")
-        summary = path
-
     _log({
         "event": "tool_use",
         "tool": tool_name,
-        "input": summary,
+        "input": tool_input,
         "session_id": session_id,
     })
 

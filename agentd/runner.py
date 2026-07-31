@@ -58,7 +58,7 @@ async def run(task_path: str, dry_run: bool = False) -> int:
         _log({
             "event": "task_start",
             "task": task.name,
-            "prompt": task.prompt[:200],
+            "prompt": task.prompt,
             "model": task.model,
             "gpus": task.gpus,
             "gpu_type": task.gpu_type,
@@ -105,12 +105,12 @@ async def run(task_path: str, dry_run: bool = False) -> int:
                         elif block_type == "tool_use":
                             tool_calls.append({
                                 "tool": block.name,
-                                "input": str(block.input)[:500],
+                                "input": block.input,
                             })
                     _log({
                         "event": "assistant_message",
                         "turn": turn,
-                        "text": "\n".join(text_parts)[:2000] if text_parts else None,
+                        "text": "\n".join(text_parts) if text_parts else None,
                         "tool_calls": tool_calls or None,
                     })
                 elif hasattr(msg, "result"):
