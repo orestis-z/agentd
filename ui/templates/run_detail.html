@@ -61,7 +61,7 @@
         </thead>
         <tbody>
             {% for event in timeline %}
-            <tr class="{% if event.event == 'security_deny' %}security-deny{% endif %}">
+            <tr class="{% if event.event == 'security_deny' %}security-deny{% elif event.event == 'assistant_message' %}assistant-msg{% endif %}">
                 <td class="ts-col">{{ event.ts }}</td>
                 <td><code>{{ event.tool }}</code></td>
                 <td class="detail-col">{{ event.detail }}</td>

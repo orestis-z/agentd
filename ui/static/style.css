@@ -196,6 +196,9 @@ details summary:hover { color: #c9d1d9; }
 }
 .timeline-table tr.security-deny { background: #2d1b1b; }
 .timeline-table tr.security-deny td { color: #f85149; }
+.timeline-table tr.assistant-msg { background: #1c2333; }
+.timeline-table tr.assistant-msg td { color: #c9d1d9; }
+.timeline-table tr.assistant-msg .detail-col { white-space: pre-wrap; }
 
 .log-event { margin-bottom: 4px; border: 1px solid #21262d; border-radius: 6px; }
 .log-event summary { padding: 6px 12px; font-size: 13px; }

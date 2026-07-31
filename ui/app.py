@@ -283,6 +283,16 @@ def run_detail(run_id):
                 "tool": e.get("tool", ""),
                 "detail": e.get("input", "") if ev == "tool_use" else e.get("reason", ""),
             })
+        elif ev == "assistant_message":
+            text = e.get("text") or ""
+            tool_calls = e.get("tool_calls") or []
+            tools_summary = ", ".join(tc["tool"] for tc in tool_calls)
+            timeline.append({
+                "ts": _format_ts(e.get("ts", "")),
+                "event": ev,
+                "tool": f"Turn {e.get('turn', '?')}",
+                "detail": text[:300] if text else f"[{tools_summary}]" if tools_summary else "",
+            })
 
     error_info = None
     if result and result.get("is_error"):

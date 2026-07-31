@@ -8,7 +8,7 @@ import os
 import sys
 import uuid
 
-from claude_agent_sdk import ClaudeAgentOptions, query
+from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, query
 
 from agentd.config import load_task
 import agentd.hooks as hooks
@@ -91,9 +91,29 @@ async def run(task_path: str, dry_run: bool = False) -> int:
         result_metadata = {}
 
         prompt = task.prompt or "Follow the instructions in the system prompt."
+        turn = 0
         try:
             async for msg in query(prompt=prompt, options=options):
-                if hasattr(msg, "result"):
+                if isinstance(msg, AssistantMessage):
+                    turn += 1
+                    text_parts = []
+                    tool_calls = []
+                    for block in msg.content:
+                        block_type = getattr(block, "type", None)
+                        if block_type == "text":
+                            text_parts.append(block.text)
+                        elif block_type == "tool_use":
+                            tool_calls.append({
+                                "tool": block.name,
+                                "input": str(block.input)[:500],
+                            })
+                    _log({
+                        "event": "assistant_message",
+                        "turn": turn,
+                        "text": "\n".join(text_parts)[:2000] if text_parts else None,
+                        "tool_calls": tool_calls or None,
+                    })
+                elif hasattr(msg, "result"):
                     result_metadata = {
                         "num_turns": getattr(msg, "num_turns", None),
                         "total_cost_usd": getattr(msg, "total_cost_usd", None),
