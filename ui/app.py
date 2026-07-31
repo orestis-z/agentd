@@ -293,11 +293,13 @@ def run_detail(run_id):
 
     result_text = result.get("result") if result else None
 
-    try:
-        with open(log_path) as f:
-            raw_log = f.read()
-    except OSError:
-        raw_log = ""
+    raw_events = []
+    for e in events:
+        raw_events.append({
+            "ts": e.get("ts", ""),
+            "event": e.get("event", "unknown"),
+            "json": json.dumps(e, indent=2),
+        })
 
     return render_template(
         "run_detail.html",
@@ -305,7 +307,7 @@ def run_detail(run_id):
         timeline=timeline,
         error_info=error_info,
         result_text=result_text,
-        raw_log=raw_log,
+        raw_events=raw_events,
     )
 
 

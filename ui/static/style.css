@@ -197,4 +197,15 @@ details summary:hover { color: #c9d1d9; }
 .timeline-table tr.security-deny { background: #2d1b1b; }
 .timeline-table tr.security-deny td { color: #f85149; }
 
-.log-raw { font-size: 12px; max-height: 600px; overflow: auto; }
+.log-event { margin-bottom: 4px; border: 1px solid #21262d; border-radius: 6px; }
+.log-event summary { padding: 6px 12px; font-size: 13px; }
+.log-event-type { color: #58a6ff; font-weight: bold; }
+.log-event-json {
+    background: #161b22;
+    padding: 12px;
+    margin: 0;
+    border-top: 1px solid #21262d;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}

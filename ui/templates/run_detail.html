@@ -75,7 +75,12 @@
 </section>
 
 <section>
-    <h2>Raw Log</h2>
-    <pre class="result-pre log-raw">{{ raw_log }}</pre>
+    <h2>Raw Log ({{ raw_events|length }} events)</h2>
+    {% for ev in raw_events %}
+    <details class="log-event">
+        <summary><span class="log-event-type">{{ ev.event }}</span> <span class="muted">{{ ev.ts }}</span></summary>
+        <pre class="log-event-json">{{ ev.json }}</pre>
+    </details>
+    {% endfor %}
 </section>
 {% endblock %}
