@@ -196,3 +196,5 @@ details summary:hover { color: #c9d1d9; }
 }
 .timeline-table tr.security-deny { background: #2d1b1b; }
 .timeline-table tr.security-deny td { color: #f85149; }
+
+.log-raw { font-size: 12px; max-height: 600px; overflow: auto; }

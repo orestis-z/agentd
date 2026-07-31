@@ -156,6 +156,13 @@ def launch():
 
     task_data = {"name": name, "prompt": prompt}
 
+    skill = request.form.get("skill", "").strip()
+    if skill:
+        task_data["skill"] = skill
+        skill_args = request.form.get("skill_args", "").strip()
+        if skill_args:
+            task_data["skill_args"] = skill_args
+
     model = request.form.get("model", "").strip()
     if model:
         task_data["model"] = model
@@ -285,12 +292,19 @@ def run_detail(run_id):
 
     result_text = result.get("result") if result else None
 
+    try:
+        with open(log_path) as f:
+            raw_log = f.read()
+    except OSError:
+        raw_log = ""
+
     return render_template(
         "run_detail.html",
         run=run_info,
         timeline=timeline,
         error_info=error_info,
         result_text=result_text,
+        raw_log=raw_log,
     )
 
 

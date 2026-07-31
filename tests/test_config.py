@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 from pathlib import Path
-from agentd.config import load_task, NotifyConfig
+from agentd.config import load_task, resolve_skill, _github_blob_to_raw, NotifyConfig
 
 
 def _write_yaml(tmp_path: Path, content: str) -> Path:
@@ -121,3 +121,79 @@ def test_load_infra_fields_default_none(tmp_path):
     assert task.gpus is None
     assert task.gpu_type is None
     assert task.timeout is None
+
+
+def test_load_skill_local(tmp_path):
+    skill_file = tmp_path / "my_skill.md"
+    skill_file.write_text("You are a code reviewer.")
+    p = _write_yaml(tmp_path, f"""
+name: skill-test
+prompt: review this PR
+skill: {skill_file}
+""")
+    task = load_task(p)
+    assert task.skill == str(skill_file)
+    assert task.system_prompt == "You are a code reviewer."
+
+
+def test_load_skill_prepends_to_system_prompt(tmp_path):
+    skill_file = tmp_path / "my_skill.md"
+    skill_file.write_text("You are a code reviewer.")
+    p = _write_yaml(tmp_path, f"""
+name: skill-test
+prompt: review this PR
+skill: {skill_file}
+system_prompt: Be concise.
+""")
+    task = load_task(p)
+    assert task.system_prompt == "You are a code reviewer.\n\nBe concise."
+
+
+def test_load_skill_args(tmp_path):
+    p = _write_yaml(tmp_path, """
+name: autopilot
+prompt: run autopilot
+skill_args: --days 120
+""")
+    task = load_task(p)
+    assert "Skill arguments: --days 120" in task.prompt
+
+
+def test_load_skill_args_not_present(tmp_path):
+    p = _write_yaml(tmp_path, """
+name: test
+prompt: do something
+""")
+    task = load_task(p)
+    assert task.prompt == "do something"
+    assert task.skill_args is None
+
+
+def test_github_blob_to_raw():
+    url = "https://github.com/vllm-project/speculators/blob/main/.claude/skills/pr-review/SKILL.md"
+    raw = _github_blob_to_raw(url)
+    assert raw == "https://raw.githubusercontent.com/vllm-project/speculators/main/.claude/skills/pr-review/SKILL.md"
+
+
+def test_github_blob_to_raw_passthrough():
+    url = "https://example.com/some/file.md"
+    assert _github_blob_to_raw(url) == url
+
+
+def test_resolve_skill_local_file(tmp_path):
+    skill_file = tmp_path / "SKILL.md"
+    skill_file.write_text("skill content")
+    assert resolve_skill(str(skill_file)) == "skill content"
+
+
+def test_resolve_skill_named(tmp_path, monkeypatch):
+    skills_dir = tmp_path / ".claude" / "skills" / "my-skill"
+    skills_dir.mkdir(parents=True)
+    (skills_dir / "SKILL.md").write_text("named skill content")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    assert resolve_skill("my-skill") == "named skill content"
+
+
+def test_resolve_skill_not_found():
+    with pytest.raises(ValueError, match="Cannot resolve skill"):
+        resolve_skill("nonexistent-skill-xyz-12345")

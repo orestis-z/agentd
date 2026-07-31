@@ -22,6 +22,15 @@
             <label>Prompt *</label>
             <textarea name="prompt" id="f-prompt" required rows="3" placeholder="Describe what the agent should do..."></textarea>
         </div>
+        <div class="form-row">
+            <label>Skill</label>
+            <input type="text" name="skill" id="f-skill" placeholder="pr-review, /path/to/SKILL.md, or https://github.com/.../SKILL.md">
+            <span class="muted">Name, local path, or URL — resolved and injected as system prompt</span>
+        </div>
+        <div class="form-row" id="skill-args-row" style="display:none">
+            <label>Skill Arguments</label>
+            <input type="text" name="skill_args" id="f-skill_args" placeholder="e.g. --days 120 or PR#123">
+        </div>
         <div class="form-row-group">
             <div class="form-row">
                 <label>Model</label>
@@ -151,6 +160,9 @@ function loadTemplate(filename) {
     if (!filename) {
         document.getElementById('f-name').value = '';
         document.getElementById('f-prompt').value = '';
+        document.getElementById('f-skill').value = '';
+        document.getElementById('f-skill_args').value = '';
+        document.getElementById('skill-args-row').style.display = 'none';
         document.getElementById('f-model').value = '';
         document.getElementById('f-gpus').value = '0';
         document.getElementById('f-gpu_type').value = 'a100';
@@ -167,6 +179,9 @@ function loadTemplate(filename) {
         .then(function(d) {
             document.getElementById('f-name').value = d.name || '';
             document.getElementById('f-prompt').value = d.prompt || '';
+            document.getElementById('f-skill').value = d.skill || '';
+            document.getElementById('f-skill_args').value = d.skill_args || '';
+            document.getElementById('skill-args-row').style.display = d.skill ? '' : 'none';
             document.getElementById('f-model').value = d.model || '';
             document.getElementById('f-gpus').value = d.gpus != null ? d.gpus : 0;
             document.getElementById('f-gpu_type').value = d.gpu_type || 'a100';
@@ -178,5 +193,9 @@ function loadTemplate(filename) {
             document.getElementById('f-allowed_tools').value = (d.allowed_tools || []).join(', ');
         });
 }
+
+document.getElementById('f-skill').addEventListener('input', function() {
+    document.getElementById('skill-args-row').style.display = this.value.trim() ? '' : 'none';
+});
 </script>
 {% endblock %}

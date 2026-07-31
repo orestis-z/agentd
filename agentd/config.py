@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import re
+import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -19,6 +22,8 @@ class NotifyConfig:
 class TaskConfig:
     name: str
     prompt: str
+    skill: str | None = None
+    skill_args: str | None = None
     system_prompt: str | None = None
     allowed_tools: list[str] = field(default_factory=list)
     max_turns: int | None = None
@@ -29,6 +34,32 @@ class TaskConfig:
     gpus: int | None = None
     gpu_type: str | None = None
     timeout: int | None = None
+
+
+def _github_blob_to_raw(url: str) -> str:
+    return re.sub(
+        r"https?://github\.com/([^/]+)/([^/]+)/blob/(.+)",
+        r"https://raw.githubusercontent.com/\1/\2/\3",
+        url,
+    )
+
+
+def resolve_skill(ref: str) -> str:
+    if ref.startswith("http://") or ref.startswith("https://"):
+        raw_url = _github_blob_to_raw(ref)
+        with urllib.request.urlopen(raw_url) as resp:
+            return resp.read().decode()
+
+    ref_path = Path(ref)
+    if ref_path.is_file():
+        return ref_path.read_text()
+
+    skills_dir = Path(os.path.expanduser("~/.claude/skills"))
+    skill_file = skills_dir / ref / "SKILL.md"
+    if skill_file.is_file():
+        return skill_file.read_text()
+
+    raise ValueError(f"Cannot resolve skill: {ref}")
 
 
 def load_task(path: str | Path) -> TaskConfig:
@@ -54,10 +85,26 @@ def load_task(path: str | Path) -> TaskConfig:
             raise ValueError(f"{path}: invalid notify.on values: {invalid}")
         notify = NotifyConfig(slack_webhook_env=n["slack_webhook_env"], on=on)
 
+    skill_ref = data.get("skill")
+    skill_args = data.get("skill_args")
+    system_prompt = data.get("system_prompt")
+    if skill_ref:
+        skill_content = resolve_skill(skill_ref)
+        if system_prompt:
+            system_prompt = skill_content + "\n\n" + system_prompt
+        else:
+            system_prompt = skill_content
+
+    prompt = data["prompt"]
+    if skill_args:
+        prompt = f"{prompt}\n\nSkill arguments: {skill_args}"
+
     return TaskConfig(
         name=data["name"],
-        prompt=data["prompt"],
-        system_prompt=data.get("system_prompt"),
+        prompt=prompt,
+        skill=skill_ref,
+        skill_args=skill_args,
+        system_prompt=system_prompt,
         allowed_tools=data.get("allowed_tools", []),
         max_turns=data.get("max_turns"),
         max_budget_usd=data.get("max_budget_usd"),
