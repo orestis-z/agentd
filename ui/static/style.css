@@ -170,13 +170,3 @@ details summary:hover { color: #c9d1d9; }
 }
 .timeline-table tr.security-deny { background: #2d1b1b; }
 .timeline-table tr.security-deny td { color: #f85149; }
-
-.answer pre {
-    background: #161b22;
-    padding: 16px;
-    border-radius: 6px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    margin-top: 8px;
-    font-size: 14px;
-}

@@ -217,8 +217,8 @@ envsubst < k8s/ui-deployment.yml | oc apply -f -
 ### Features
 
 - **Run list** — view past and active runs with status, cost, and duration
+- **Run detail** — tool call timeline, error info, and metadata for each run
 - **Launch** — start a new run from the available task definitions
-- **Ask why** — ask questions about a run's logs (powered by Claude)
 
 ## Architecture
 
