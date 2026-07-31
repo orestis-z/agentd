@@ -184,9 +184,9 @@ def process_task(
     failed_dir: Path,
 ):
     task = load_task(task_path)
-    gpus = task.gpus or 1
+    gpus = task.gpus if task.gpus is not None else 1
     gpu_type = task.gpu_type or DEFAULT_GPU_TYPE
-    timeout = task.timeout or DEFAULT_TIMEOUT
+    timeout = task.timeout if task.timeout is not None else DEFAULT_TIMEOUT
 
     print(f"\n=== Task: {task.name} | {gpus}x {gpu_type} | timeout {timeout}s ===")
 

@@ -1,0 +1,8 @@
+name: hello-world
+prompt: |
+  Print "Hello from agentd!" and report the current date, hostname, and Python version.
+allowed_tools:
+  - Bash
+max_turns: 5
+max_budget_usd: 0.5
+gpus: 0
