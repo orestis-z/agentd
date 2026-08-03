@@ -128,6 +128,10 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
     ])
 
     env_exports = "export AGENTD_LOG_DIR=/tmp/agentd-logs && "
+    for var in ("CLAUDE_CODE_USE_VERTEX", "CLOUD_ML_REGION", "ANTHROPIC_VERTEX_PROJECT_ID"):
+        val = os.environ.get(var, "")
+        if val:
+            env_exports += f"export {var}='{val}' && "
     if task.github_token_env:
         token = os.environ.get(task.github_token_env, "")
         if token:
