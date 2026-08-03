@@ -211,6 +211,18 @@ def launch():
     except ValueError:
         pass
 
+    git_name = request.form.get("git_name", "").strip()
+    if git_name:
+        task_data["git_name"] = git_name
+
+    git_email = request.form.get("git_email", "").strip()
+    if git_email:
+        task_data["git_email"] = git_email
+
+    github_token_env = request.form.get("github_token_env", "").strip()
+    if github_token_env:
+        task_data["github_token_env"] = github_token_env
+
     slug = name.lower().replace(" ", "-").replace("_", "-")
     filename = f"{slug}.yml"
     os.makedirs(QUEUE_DIR, exist_ok=True)
