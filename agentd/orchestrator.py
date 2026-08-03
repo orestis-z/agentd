@@ -127,11 +127,17 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
         "chmod", "644", remote_task_path,
     ])
 
+    env_exports = "export AGENTD_LOG_DIR=/tmp/agentd-logs && "
+    if task.github_token_env:
+        token = os.environ.get(task.github_token_env, "")
+        if token:
+            env_exports += f"export GITHUB_TOKEN='{token}' && "
+
     result = subprocess.run(
         [
             "oc", "exec", pod, "-n", NAMESPACE, "--",
             "bash", "-c",
-            f"export AGENTD_LOG_DIR=/tmp/agentd-logs && "
+            f"{env_exports}"
             f"sudo -E -u claude-runner python -m agentd --task {remote_task_path}",
         ],
         timeout=timeout,
