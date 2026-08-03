@@ -85,10 +85,16 @@ def provision_pod(task_name: str, gpus: int, gpu_type: str, devenv_dir: Path):
     ])
 
 
-def run_task_in_pod(task_path: Path, task_name: str, timeout: int) -> int:
-    pod = pod_name(task_name)
+def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
+    pod = pod_name(task.name)
     remote_task_dir = "/tmp/agentd-tasks"
     remote_task_path = f"{remote_task_dir}/{task_path.name}"
+
+    git_config = ""
+    if task.git_name:
+        git_config += f"git config --global user.name '{task.git_name}' && "
+    if task.git_email:
+        git_config += f"git config --global user.email '{task.git_email}' && "
 
     _run_cmd([
         "oc", "exec", pod, "-n", NAMESPACE, "--",
@@ -102,6 +108,7 @@ def run_task_in_pod(task_path: Path, task_name: str, timeout: int) -> int:
         "chmod g+rx /root && "
         "chmod -R g+rX /root/.config /root/.claude /root/.cache 2>/dev/null || true && "
         "chmod g+r /root/.claude/.credentials.json 2>/dev/null || true && "
+        f"{git_config}"
         "python3 -c '"
         'import json, pathlib; '
         'p = pathlib.Path("/root/.claude.json"); '
@@ -215,7 +222,7 @@ def process_task(
 
     try:
         provision_pod(task.name, gpus, gpu_type, devenv_dir)
-        exit_code = run_task_in_pod(task_path, task.name, timeout)
+        exit_code = run_task_in_pod(task_path, task, timeout)
         copy_logs_out(task.name, log_dir)
 
         dest = completed_dir if exit_code == 0 else failed_dir

@@ -31,6 +31,8 @@ class TaskConfig:
     cwd: str | None = None
     model: str | None = None
     notify: NotifyConfig | None = None
+    git_name: str | None = None
+    git_email: str | None = None
     gpus: int | None = None
     gpu_type: str | None = None
     timeout: int | None = None
@@ -112,6 +114,8 @@ def load_task(path: str | Path) -> TaskConfig:
         cwd=data.get("cwd"),
         model=data.get("model"),
         notify=notify,
+        git_name=data.get("git_name"),
+        git_email=data.get("git_email"),
         gpus=data.get("gpus"),
         gpu_type=data.get("gpu_type"),
         timeout=data.get("timeout"),
