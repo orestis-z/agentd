@@ -77,11 +77,13 @@ def _list_runs() -> list[dict]:
         try:
             with open(path) as f:
                 data = yaml.safe_load(f) or {}
+            queue_file = Path(path).name.removeprefix(".running-")
             running_names.add(data.get("name", ""))
             runs.append({
                 "run_id": None,
                 "run_id_short": "-",
                 "task": data.get("name", Path(path).stem.removeprefix(".running-")),
+                "queue_file": queue_file,
                 "started": "",
                 "started_raw": "",
                 "status": "running",
@@ -110,6 +112,7 @@ def _list_runs() -> list[dict]:
             "run_id": None,
             "run_id_short": "-",
             "task": name,
+            "queue_file": Path(path).name,
             "started": "",
             "started_raw": "",
             "status": "queued",
@@ -130,6 +133,7 @@ def _list_runs() -> list[dict]:
             "run_id": run_id,
             "run_id_short": run_id[:8],
             "task": first.get("task", "unknown"),
+            "queue_file": None,
             "started": _format_ts(first.get("ts", "")),
             "started_raw": first.get("ts", ""),
             "model": first.get("model"),
@@ -265,6 +269,56 @@ def launch():
 
     flash(f"Queued: {name}", "success")
     return redirect(url_for("index"))
+
+
+@app.route("/queue/<filename>")
+def queue_detail(filename):
+    task_path = os.path.join(QUEUE_DIR, filename)
+    running_path = os.path.join(QUEUE_DIR, f".running-{filename}")
+    if os.path.isfile(running_path):
+        path = running_path
+        status = "running"
+    elif os.path.isfile(task_path):
+        path = task_path
+        status = "queued"
+    else:
+        flash("Queued task not found.", "error")
+        return redirect(url_for("index"))
+
+    with open(path) as f:
+        data = yaml.safe_load(f) or {}
+
+    task_config = json.dumps(
+        {k: v for k, v in data.items() if v is not None},
+        indent=2,
+    )
+
+    run_info = {
+        "run_id": None,
+        "run_id_short": "-",
+        "task": data.get("name", Path(path).stem),
+        "started": "",
+        "started_raw": "",
+        "status": status,
+        "model": data.get("model"),
+        "gpus": data.get("gpus"),
+        "gpu_type": data.get("gpu_type"),
+        "max_turns": data.get("max_turns"),
+        "max_budget_usd": data.get("max_budget_usd"),
+        "cost": None,
+        "turns": None,
+        "duration": None,
+    }
+
+    return render_template(
+        "run_detail.html",
+        run=run_info,
+        task_config=task_config,
+        timeline=[],
+        error_info=None,
+        result_text=None,
+        raw_events=[],
+    )
 
 
 @app.route("/delete/<run_id>", methods=["POST"])

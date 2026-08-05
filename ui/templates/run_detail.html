@@ -22,11 +22,13 @@
     {% if run.turns %}<dt>Turns</dt><dd>{{ run.turns }}{% if run.max_turns %} <span class="muted">/ {{ run.max_turns }}</span>{% endif %}</dd>{% endif %}
 </dl>
 
+{% if run.run_id %}
 <div class="detail-actions">
     <form method="POST" action="{{ url_for('delete', run_id=run.run_id) }}" style="display:inline" onsubmit="return confirm('Delete logs for run {{ run.run_id_short }}?')">
         <button type="submit" class="btn btn-danger">Delete</button>
     </form>
 </div>
+{% endif %}
 
 {% if task_config %}
 <section>
