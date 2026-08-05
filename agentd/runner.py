@@ -57,6 +57,7 @@ async def run(task_path: str, dry_run: bool = False) -> int:
     try:
         task_dict = dataclasses.asdict(task)
         task_dict.pop("notify", None)
+        task_dict["task"] = task_dict.pop("name")
         _log({"event": "task_start", **task_dict})
 
         options = ClaudeAgentOptions(
