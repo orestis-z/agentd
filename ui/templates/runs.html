@@ -106,6 +106,20 @@
                 <input type="text" name="anthropic_base_url" id="f-anthropic_base_url" placeholder="http://vllm-svc:8000">
                 <span class="muted">Custom endpoint (e.g. vLLM) — overrides Vertex AI</span>
             </div>
+            <div class="form-row">
+                <label>Slack webhook env var</label>
+                <input type="text" name="slack_webhook_env" id="f-slack_webhook_env" placeholder="SLACK_WEBHOOK_URL">
+                <span class="muted">Name of env var containing webhook URL — enables Slack notifications</span>
+            </div>
+            <div class="form-row" id="notify-on-row" style="display:none">
+                <label>Notify on</label>
+                <label style="display:inline; color:#c9d1d9; font-size:14px; margin-right:12px">
+                    <input type="checkbox" name="notify_on_success" id="f-notify_on_success"> success
+                </label>
+                <label style="display:inline; color:#c9d1d9; font-size:14px">
+                    <input type="checkbox" name="notify_on_failure" id="f-notify_on_failure" checked> failure
+                </label>
+            </div>
         </details>
         <button type="submit" id="submit-btn">Queue</button>
     </form>
@@ -238,6 +252,10 @@ function loadTemplate(filename) {
         document.getElementById('f-git_email').value = '';
         document.getElementById('f-github_token_env').value = '';
         document.getElementById('f-anthropic_base_url').value = '';
+        document.getElementById('f-slack_webhook_env').value = '';
+        document.getElementById('f-notify_on_success').checked = false;
+        document.getElementById('f-notify_on_failure').checked = true;
+        document.getElementById('notify-on-row').style.display = 'none';
         updateSubmitBtn();
         return;
     }
@@ -263,6 +281,12 @@ function loadTemplate(filename) {
             document.getElementById('f-git_email').value = d.git_email || '';
             document.getElementById('f-github_token_env').value = d.github_token_env || '';
             document.getElementById('f-anthropic_base_url').value = d.anthropic_base_url || '';
+            var webhook = (d.notify && d.notify.slack_webhook_env) || '';
+            document.getElementById('f-slack_webhook_env').value = webhook;
+            document.getElementById('notify-on-row').style.display = webhook ? '' : 'none';
+            var notifyOn = (d.notify && d.notify.on) || ['failure'];
+            document.getElementById('f-notify_on_success').checked = notifyOn.indexOf('success') !== -1;
+            document.getElementById('f-notify_on_failure').checked = notifyOn.indexOf('failure') !== -1;
             updateSubmitBtn();
         });
 }
@@ -279,6 +303,10 @@ document.getElementById('f-skill').addEventListener('input', function() {
     document.getElementById('skill-args-row').style.display = hasSkill ? '' : 'none';
     document.getElementById('f-prompt').required = !hasSkill;
     document.getElementById('prompt-label').textContent = hasSkill ? 'Prompt' : 'Prompt *';
+});
+
+document.getElementById('f-slack_webhook_env').addEventListener('input', function() {
+    document.getElementById('notify-on-row').style.display = this.value.trim() ? '' : 'none';
 });
 </script>
 {% endblock %}

@@ -150,6 +150,10 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
         token = os.environ.get(task.github_token_env, "")
         if token:
             env_exports += f"export GITHUB_TOKEN='{token}' && "
+    if task.notify and task.notify.slack_webhook_env:
+        webhook = os.environ.get(task.notify.slack_webhook_env, "")
+        if webhook:
+            env_exports += f"export {task.notify.slack_webhook_env}='{webhook}' && "
 
     result = subprocess.run(
         [

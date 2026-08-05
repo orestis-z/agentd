@@ -324,6 +324,18 @@ def launch():
     if anthropic_base_url:
         task_data["anthropic_base_url"] = anthropic_base_url
 
+    slack_webhook_env = request.form.get("slack_webhook_env", "").strip()
+    if slack_webhook_env:
+        notify_on = []
+        if request.form.get("notify_on_success"):
+            notify_on.append("success")
+        if request.form.get("notify_on_failure"):
+            notify_on.append("failure")
+        task_data["notify"] = {
+            "slack_webhook_env": slack_webhook_env,
+            "on": notify_on or ["failure"],
+        }
+
     schedule = request.form.get("schedule", "").strip()
 
     slug = name.lower().replace(" ", "-").replace("_", "-")
