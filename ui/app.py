@@ -9,6 +9,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 import yaml
+from croniter import croniter as Croniter
 from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 
 app = Flask(__name__)
@@ -17,6 +18,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "agentd-ui-dev-key")
 LOG_DIR = os.environ.get("AGENTD_LOG_DIR", "./logs")
 TASK_DIR = os.environ.get("AGENTD_TASK_DIR", "./tasks")
 QUEUE_DIR = os.environ.get("AGENTD_QUEUE_DIR", "./queue")
+SCHEDULE_DIR = os.environ.get("AGENTD_SCHEDULE_DIR", "./schedules")
 
 
 def _format_ts(ts: str) -> str:
@@ -163,11 +165,72 @@ def _list_tasks() -> list[str]:
     return tasks
 
 
+def _format_delta(seconds: float) -> str:
+    if seconds < 0:
+        return "overdue"
+    if seconds < 60:
+        return "< 1m"
+    if seconds < 3600:
+        return f"in {int(seconds / 60)}m"
+    if seconds < 86400:
+        return f"in {int(seconds / 3600)}h"
+    days = int(seconds / 86400)
+    return f"in {days}d"
+
+
+def _list_schedules() -> list[dict]:
+    schedules = []
+    if not os.path.isdir(SCHEDULE_DIR):
+        return schedules
+    now = datetime.now(timezone.utc)
+    for path in sorted(glob.glob(os.path.join(SCHEDULE_DIR, "*.yml"))):
+        if Path(path).name.startswith("."):
+            continue
+        try:
+            with open(path) as f:
+                data = yaml.safe_load(f) or {}
+        except Exception:
+            continue
+        slug = Path(path).stem
+        schedule = data.get("schedule", "")
+
+        last_file = os.path.join(SCHEDULE_DIR, f".last-{slug}")
+        last_run_ts = None
+        if os.path.isfile(last_file):
+            last_run_ts = open(last_file).read().strip()
+
+        next_run = None
+        if schedule:
+            try:
+                base = datetime.fromisoformat(last_run_ts) if last_run_ts else now
+                cron = Croniter(schedule, base)
+                next_dt = cron.get_next(datetime)
+                delta = (next_dt - now).total_seconds()
+                next_run = _format_delta(delta)
+            except Exception:
+                next_run = "invalid cron"
+
+        schedules.append({
+            "filename": Path(path).name,
+            "name": data.get("name", slug),
+            "schedule": schedule,
+            "model": data.get("model"),
+            "gpus": data.get("gpus"),
+            "gpu_type": data.get("gpu_type"),
+            "next_run": next_run,
+            "last_run": _format_ts(last_run_ts) if last_run_ts else None,
+        })
+    return schedules
+
+
 @app.route("/")
 def index():
     runs = _list_runs()
     task_names = sorted(set(r["task"] for r in runs))
-    return render_template("runs.html", runs=runs, tasks=_list_tasks(), task_names=task_names)
+    return render_template(
+        "runs.html", runs=runs, tasks=_list_tasks(),
+        task_names=task_names, schedules=_list_schedules(),
+    )
 
 
 @app.route("/api/template/<filename>")
@@ -261,13 +324,23 @@ def launch():
     if anthropic_base_url:
         task_data["anthropic_base_url"] = anthropic_base_url
 
+    schedule = request.form.get("schedule", "").strip()
+
     slug = name.lower().replace(" ", "-").replace("_", "-")
     filename = f"{slug}.yml"
-    os.makedirs(QUEUE_DIR, exist_ok=True)
-    with open(os.path.join(QUEUE_DIR, filename), "w") as f:
-        yaml.dump(task_data, f, default_flow_style=False, sort_keys=False)
 
-    flash(f"Queued: {name}", "success")
+    if schedule:
+        task_data["schedule"] = schedule
+        os.makedirs(SCHEDULE_DIR, exist_ok=True)
+        with open(os.path.join(SCHEDULE_DIR, filename), "w") as f:
+            yaml.dump(task_data, f, default_flow_style=False, sort_keys=False)
+        flash(f"Scheduled: {name}", "success")
+    else:
+        os.makedirs(QUEUE_DIR, exist_ok=True)
+        with open(os.path.join(QUEUE_DIR, filename), "w") as f:
+            yaml.dump(task_data, f, default_flow_style=False, sort_keys=False)
+        flash(f"Queued: {name}", "success")
+
     return redirect(url_for("index"))
 
 
@@ -426,6 +499,67 @@ def run_detail(run_id):
         result_text=result_text,
         raw_events=raw_events,
     )
+
+
+@app.route("/schedule/<filename>")
+def schedule_detail(filename):
+    path = os.path.join(SCHEDULE_DIR, filename)
+    if not os.path.isfile(path):
+        flash("Schedule not found.", "error")
+        return redirect(url_for("index"))
+
+    with open(path) as f:
+        data = yaml.safe_load(f) or {}
+
+    slug = Path(path).stem
+    schedule = data.get("schedule", "")
+
+    last_file = os.path.join(SCHEDULE_DIR, f".last-{slug}")
+    last_run_ts = None
+    if os.path.isfile(last_file):
+        last_run_ts = open(last_file).read().strip()
+
+    next_run = None
+    if schedule:
+        try:
+            now = datetime.now(timezone.utc)
+            base = datetime.fromisoformat(last_run_ts) if last_run_ts else now
+            cron = Croniter(schedule, base)
+            next_dt = cron.get_next(datetime)
+            delta = (next_dt - now).total_seconds()
+            next_run = _format_delta(delta)
+        except Exception:
+            next_run = "invalid cron"
+
+    task_config = json.dumps(
+        {k: v for k, v in data.items() if v is not None},
+        indent=2,
+    )
+
+    return render_template(
+        "schedule_detail.html",
+        filename=filename,
+        name=data.get("name", slug),
+        schedule=schedule,
+        next_run=next_run,
+        last_run=_format_ts(last_run_ts) if last_run_ts else None,
+        task_config=task_config,
+    )
+
+
+@app.route("/schedule/<filename>/delete", methods=["POST"])
+def schedule_delete(filename):
+    path = os.path.join(SCHEDULE_DIR, filename)
+    if os.path.isfile(path):
+        os.remove(path)
+        slug = Path(filename).stem
+        last_file = os.path.join(SCHEDULE_DIR, f".last-{slug}")
+        if os.path.isfile(last_file):
+            os.remove(last_file)
+        flash(f"Deleted schedule: {slug}", "success")
+    else:
+        flash("Schedule not found.", "error")
+    return redirect(url_for("index"))
 
 
 if __name__ == "__main__":

@@ -56,6 +56,7 @@ code { background: #161b22; padding: 2px 6px; border-radius: 4px; font-size: 13p
 .badge.failed { background: #4a1520; color: #f85149; }
 .badge.running { background: #1c3150; color: #58a6ff; }
 .badge.queued { background: #2d2a1b; color: #d29922; }
+.badge.scheduled { background: #1c2d33; color: #3fb950; }
 
 .btn-icon {
     background: none;

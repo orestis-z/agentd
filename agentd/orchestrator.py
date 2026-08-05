@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
+from croniter import croniter as Croniter
 
 from agentd.config import load_task, resolve_skill
 
@@ -199,6 +200,56 @@ def teardown_pod(task_name: str, devenv_dir: Path):
         pass
 
 
+def check_schedules(schedule_dir: Path, queue_dir: Path):
+    now = datetime.now(timezone.utc)
+
+    for path in schedule_dir.glob("*.yml"):
+        if path.name.startswith("."):
+            continue
+        try:
+            with path.open() as f:
+                data = yaml.safe_load(f)
+        except Exception:
+            continue
+
+        schedule = data.get("schedule")
+        if not schedule:
+            continue
+
+        slug = path.stem
+        last_file = schedule_dir / f".last-{slug}"
+
+        if last_file.exists():
+            try:
+                base = datetime.fromisoformat(last_file.read_text().strip())
+            except ValueError:
+                base = now
+        else:
+            base = now
+
+        try:
+            cron = Croniter(schedule, base)
+            next_run = cron.get_next(datetime)
+        except Exception:
+            print(f"WARNING: invalid cron expression in {path}: {schedule}")
+            continue
+
+        if now >= next_run:
+            queue_path = queue_dir / path.name
+            running_marker = queue_dir / f".running-{path.name}"
+            if queue_path.exists() or running_marker.exists():
+                continue
+
+            task_data = dict(data)
+            task_data.pop("schedule", None)
+            queue_dir.mkdir(parents=True, exist_ok=True)
+            with queue_path.open("w") as f:
+                yaml.dump(task_data, f, default_flow_style=False, sort_keys=False)
+
+            last_file.write_text(now.isoformat())
+            print(f"=== Enqueued scheduled task: {data.get('name', slug)} ===")
+
+
 def cleanup_stale_pods():
     prefix = f"devenv-{_user()}-agentd-"
     try:
@@ -286,6 +337,7 @@ def watch_queue(
     devenv_dir: Path,
     log_dir: Path,
     poll_interval: int = 30,
+    schedule_dir: Path | None = None,
 ):
     global _current_task, _devenv_dir
     _devenv_dir = devenv_dir
@@ -297,8 +349,13 @@ def watch_queue(
     cleanup_stale_pods()
 
     print(f"=== Orchestrator watching {queue_dir} (poll every {poll_interval}s) ===")
+    if schedule_dir:
+        print(f"=== Checking schedules in {schedule_dir} ===")
 
     while True:
+        if schedule_dir and schedule_dir.is_dir():
+            check_schedules(schedule_dir, queue_dir)
+
         tasks = sorted(queue_dir.glob("*.yml"), key=lambda p: p.stat().st_mtime)
         if not tasks:
             time.sleep(poll_interval)
@@ -338,6 +395,10 @@ def main():
         help="Directory for extracted run logs (default: ./logs)",
     )
     parser.add_argument(
+        "--schedule-dir", type=Path, default=None,
+        help="Directory with scheduled task YAMLs (optional)",
+    )
+    parser.add_argument(
         "--poll-interval", type=int, default=30,
         help="Seconds between queue polls (default: 30)",
     )
@@ -358,7 +419,10 @@ def main():
         print("ERROR: another orchestrator is already running")
         sys.exit(1)
 
-    watch_queue(args.queue, args.devenv_dir, args.log_dir, args.poll_interval)
+    watch_queue(
+        args.queue, args.devenv_dir, args.log_dir, args.poll_interval,
+        schedule_dir=args.schedule_dir,
+    )
 
 
 if __name__ == "__main__":

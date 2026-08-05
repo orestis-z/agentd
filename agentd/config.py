@@ -41,6 +41,7 @@ class TaskConfig:
     gpus: int | None = None
     gpu_type: str | None = None
     timeout: int | None = None
+    schedule: str | None = None
 
 
 def _github_blob_to_raw(url: str) -> str:
@@ -129,4 +130,5 @@ def load_task(path: str | Path) -> TaskConfig:
         gpus=data.get("gpus"),
         gpu_type=data.get("gpu_type"),
         timeout=data.get("timeout"),
+        schedule=data.get("schedule"),
     )

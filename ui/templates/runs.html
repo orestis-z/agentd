@@ -31,6 +31,11 @@
             <label>Skill Arguments</label>
             <input type="text" name="skill_args" id="f-skill_args" placeholder="e.g. --days 120 or PR#123">
         </div>
+        <div class="form-row">
+            <label>Schedule</label>
+            <input type="text" name="schedule" id="f-schedule" placeholder="e.g. 0 9 * * * (daily at 9am UTC)">
+            <span class="muted">Cron expression — leave empty for one-shot</span>
+        </div>
         <div class="form-row-group">
             <div class="form-row">
                 <label>Model</label>
@@ -102,9 +107,45 @@
                 <span class="muted">Custom endpoint (e.g. vLLM) — overrides Vertex AI</span>
             </div>
         </details>
-        <button type="submit">Queue</button>
+        <button type="submit" id="submit-btn">Queue</button>
     </form>
 </section>
+
+{% if schedules %}
+<section>
+    <h2>Schedules</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Schedule</th>
+                <th>Model</th>
+                <th>GPUs</th>
+                <th>Next Run</th>
+                <th>Last Run</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in schedules %}
+            <tr class="clickable-row" onclick="window.location='{{ url_for('schedule_detail', filename=s.filename) }}'">
+                <td>{{ s.name }}</td>
+                <td><code>{{ s.schedule }}</code></td>
+                <td>{{ s.model or "-" }}</td>
+                <td>{% if s.gpus is not none %}{{ s.gpus }}{% if s.gpu_type %} x {{ s.gpu_type }}{% endif %}{% else %}-{% endif %}</td>
+                <td>{{ s.next_run or "-" }}</td>
+                <td>{{ s.last_run or "never" }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('schedule_delete', filename=s.filename) }}" style="display:inline" onsubmit="event.stopPropagation(); return confirm('Delete schedule {{ s.name }}?')">
+                        <button type="submit" class="btn-icon" title="Delete schedule" onclick="event.stopPropagation()">&#x1f5d1;</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endif %}
 
 <section>
     <div class="filter-bar">
@@ -183,6 +224,7 @@ function loadTemplate(filename) {
         document.getElementById('f-skill').value = '';
         document.getElementById('f-skill_args').value = '';
         document.getElementById('skill-args-row').style.display = 'none';
+        document.getElementById('f-schedule').value = '';
         document.getElementById('f-model').value = '';
         document.getElementById('f-gpus').value = '0';
         document.getElementById('f-gpu_type').value = 'a100';
@@ -196,6 +238,7 @@ function loadTemplate(filename) {
         document.getElementById('f-git_email').value = '';
         document.getElementById('f-github_token_env').value = '';
         document.getElementById('f-anthropic_base_url').value = '';
+        updateSubmitBtn();
         return;
     }
     fetch('{{ url_for("api_template", filename="__PH__") }}'.replace('__PH__', filename))
@@ -206,6 +249,7 @@ function loadTemplate(filename) {
             document.getElementById('f-skill').value = d.skill || '';
             document.getElementById('f-skill_args').value = d.skill_args || '';
             document.getElementById('skill-args-row').style.display = d.skill ? '' : 'none';
+            document.getElementById('f-schedule').value = d.schedule || '';
             document.getElementById('f-model').value = d.model || '';
             document.getElementById('f-gpus').value = d.gpus != null ? d.gpus : 0;
             document.getElementById('f-gpu_type').value = d.gpu_type || 'a100';
@@ -219,8 +263,16 @@ function loadTemplate(filename) {
             document.getElementById('f-git_email').value = d.git_email || '';
             document.getElementById('f-github_token_env').value = d.github_token_env || '';
             document.getElementById('f-anthropic_base_url').value = d.anthropic_base_url || '';
+            updateSubmitBtn();
         });
 }
+
+function updateSubmitBtn() {
+    var btn = document.getElementById('submit-btn');
+    btn.textContent = document.getElementById('f-schedule').value.trim() ? 'Schedule' : 'Queue';
+}
+
+document.getElementById('f-schedule').addEventListener('input', updateSubmitBtn);
 
 document.getElementById('f-skill').addEventListener('input', function() {
     var hasSkill = this.value.trim();

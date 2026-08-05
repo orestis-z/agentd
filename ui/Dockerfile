@@ -1,5 +1,5 @@
 FROM python:3.12-slim
-RUN pip install --no-cache-dir flask claude-agent-sdk pyyaml
+RUN pip install --no-cache-dir flask claude-agent-sdk croniter pyyaml
 WORKDIR /app
 COPY . .
 EXPOSE 5000

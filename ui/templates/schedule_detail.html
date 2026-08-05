@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title_suffix %} — {{ name }}{% endblock %}
+{% block content %}
+<h1>
+    {{ name }}
+    <span class="badge scheduled">scheduled</span>
+</h1>
+
+<dl class="run-info">
+    <dt>Schedule</dt><dd><code>{{ schedule }}</code></dd>
+    <dt>Next Run</dt><dd>{{ next_run or "-" }}</dd>
+    <dt>Last Run</dt><dd>{{ last_run or "never" }}</dd>
+</dl>
+
+<div class="detail-actions">
+    <form method="POST" action="{{ url_for('schedule_delete', filename=filename) }}" style="display:inline" onsubmit="return confirm('Delete schedule {{ name }}?')">
+        <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+</div>
+
+{% if task_config %}
+<section>
+    <details open>
+        <summary><h2 style="display:inline">Task Definition</h2></summary>
+        <pre class="log-event-json"><code class="language-json">{{ task_config }}</code></pre>
+    </details>
+</section>
+{% endif %}
+
+<script>hljs.highlightAll();</script>
+{% endblock %}
