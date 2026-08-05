@@ -223,6 +223,22 @@ def launch():
     if github_token_env:
         task_data["github_token_env"] = github_token_env
 
+    anthropic_base_url = request.form.get("anthropic_base_url", "").strip()
+    if anthropic_base_url:
+        task_data["anthropic_base_url"] = anthropic_base_url
+
+    anthropic_api_key_env = request.form.get("anthropic_api_key_env", "").strip()
+    if anthropic_api_key_env:
+        task_data["anthropic_api_key_env"] = anthropic_api_key_env
+
+    vertex_project_id = request.form.get("vertex_project_id", "").strip()
+    if vertex_project_id:
+        task_data["vertex_project_id"] = vertex_project_id
+
+    cloud_ml_region = request.form.get("cloud_ml_region", "").strip()
+    if cloud_ml_region:
+        task_data["cloud_ml_region"] = cloud_ml_region
+
     slug = name.lower().replace(" ", "-").replace("_", "-")
     filename = f"{slug}.yml"
     os.makedirs(QUEUE_DIR, exist_ok=True)

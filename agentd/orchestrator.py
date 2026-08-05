@@ -128,10 +128,22 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
     ])
 
     env_exports = "export AGENTD_LOG_DIR=/tmp/agentd-logs && "
-    for var in ("CLAUDE_CODE_USE_VERTEX", "CLOUD_ML_REGION", "ANTHROPIC_VERTEX_PROJECT_ID"):
-        val = os.environ.get(var, "")
-        if val:
-            env_exports += f"export {var}='{val}' && "
+    if task.anthropic_base_url:
+        api_key = ""
+        if task.anthropic_api_key_env:
+            api_key = os.environ.get(task.anthropic_api_key_env, "")
+        env_exports += f"export ANTHROPIC_BASE_URL='{task.anthropic_base_url}' && "
+        env_exports += f"export ANTHROPIC_API_KEY='{api_key or 'dummy'}' && "
+    else:
+        project_id = task.vertex_project_id or os.environ.get("ANTHROPIC_VERTEX_PROJECT_ID", "")
+        region = task.cloud_ml_region or os.environ.get("CLOUD_ML_REGION", "")
+        use_vertex = os.environ.get("CLAUDE_CODE_USE_VERTEX", "")
+        if use_vertex:
+            env_exports += f"export CLAUDE_CODE_USE_VERTEX='{use_vertex}' && "
+        if region:
+            env_exports += f"export CLOUD_ML_REGION='{region}' && "
+        if project_id:
+            env_exports += f"export ANTHROPIC_VERTEX_PROJECT_ID='{project_id}' && "
     if task.github_token_env:
         token = os.environ.get(task.github_token_env, "")
         if token:

@@ -34,6 +34,10 @@ class TaskConfig:
     git_name: str | None = None
     git_email: str | None = None
     github_token_env: str | None = None
+    anthropic_base_url: str | None = None
+    anthropic_api_key_env: str | None = None
+    vertex_project_id: str | None = None
+    cloud_ml_region: str | None = None
     gpus: int | None = None
     gpu_type: str | None = None
     timeout: int | None = None
@@ -118,6 +122,10 @@ def load_task(path: str | Path) -> TaskConfig:
         git_name=data.get("git_name"),
         git_email=data.get("git_email"),
         github_token_env=data.get("github_token_env"),
+        anthropic_base_url=data.get("anthropic_base_url"),
+        anthropic_api_key_env=data.get("anthropic_api_key_env"),
+        vertex_project_id=data.get("vertex_project_id"),
+        cloud_ml_region=data.get("cloud_ml_region"),
         gpus=data.get("gpus"),
         gpu_type=data.get("gpu_type"),
         timeout=data.get("timeout"),
