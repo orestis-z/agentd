@@ -243,7 +243,9 @@ def process_task(
 
     print(f"\n=== Task: {task.name} | {gpus}x {gpu_type} | timeout {timeout}s ===")
 
+    running_marker = task_path.parent / f".running-{task_path.name}"
     try:
+        shutil.copy2(str(task_path), str(running_marker))
         provision_pod(task.name, gpus, gpu_type, devenv_dir)
         exit_code = run_task_in_pod(task_path, task, timeout)
         copy_logs_out(task.name, log_dir)
@@ -259,6 +261,7 @@ def process_task(
         failed_dir.mkdir(parents=True, exist_ok=True)
         shutil.move(str(task_path), str(failed_dir / task_path.name))
     finally:
+        running_marker.unlink(missing_ok=True)
         teardown_pod(task.name, devenv_dir)
 
 

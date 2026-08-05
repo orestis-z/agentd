@@ -72,16 +72,44 @@ def _read_all_events(path: str) -> list[dict]:
 def _list_runs() -> list[dict]:
     runs = []
 
+    running_names = set()
+    for path in glob.glob(os.path.join(QUEUE_DIR, ".running-*.yml")):
+        try:
+            with open(path) as f:
+                data = yaml.safe_load(f) or {}
+            running_names.add(data.get("name", ""))
+            runs.append({
+                "run_id": None,
+                "run_id_short": "-",
+                "task": data.get("name", Path(path).stem.removeprefix(".running-")),
+                "started": "",
+                "started_raw": "",
+                "status": "running",
+                "model": data.get("model"),
+                "gpus": data.get("gpus"),
+                "gpu_type": data.get("gpu_type"),
+                "cost": None,
+                "turns": None,
+                "duration": None,
+            })
+        except Exception:
+            pass
+
     for path in glob.glob(os.path.join(QUEUE_DIR, "*.yml")):
+        if Path(path).name.startswith(".running-"):
+            continue
         try:
             with open(path) as f:
                 data = yaml.safe_load(f) or {}
         except Exception:
             data = {}
+        name = data.get("name", Path(path).stem)
+        if name in running_names:
+            continue
         runs.append({
             "run_id": None,
             "run_id_short": "-",
-            "task": data.get("name", Path(path).stem),
+            "task": name,
             "started": "",
             "started_raw": "",
             "status": "queued",
