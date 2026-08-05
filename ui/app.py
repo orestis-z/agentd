@@ -73,23 +73,21 @@ def _list_runs() -> list[dict]:
     runs = []
 
     for path in glob.glob(os.path.join(QUEUE_DIR, "*.yml")):
-        from agentd.config import load_task
         try:
-            task = load_task(path)
-            task_name = task.name
+            with open(path) as f:
+                data = yaml.safe_load(f) or {}
         except Exception:
-            task = None
-            task_name = Path(path).stem
+            data = {}
         runs.append({
             "run_id": None,
             "run_id_short": "-",
-            "task": task_name,
+            "task": data.get("name", Path(path).stem),
             "started": "",
             "started_raw": "",
             "status": "queued",
-            "model": task.model if task else None,
-            "gpus": task.gpus if task else None,
-            "gpu_type": task.gpu_type if task else None,
+            "model": data.get("model"),
+            "gpus": data.get("gpus"),
+            "gpu_type": data.get("gpu_type"),
             "cost": None,
             "turns": None,
             "duration": None,
