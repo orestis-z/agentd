@@ -317,6 +317,8 @@ def process_task(
         shutil.move(str(task_path), str(failed_dir / task_path.name))
     finally:
         running_marker.unlink(missing_ok=True)
+        resolved = task_path.parent / f".resolved-{task_path.name}"
+        resolved.unlink(missing_ok=True)
         teardown_pod(task.name, devenv_dir)
 
 
@@ -360,7 +362,10 @@ def watch_queue(
         if schedule_dir and schedule_dir.is_dir():
             check_schedules(schedule_dir, queue_dir)
 
-        tasks = sorted(queue_dir.glob("*.yml"), key=lambda p: p.stat().st_mtime)
+        tasks = sorted(
+            (p for p in queue_dir.glob("*.yml") if not p.name.startswith(".")),
+            key=lambda p: p.stat().st_mtime,
+        )
         if not tasks:
             time.sleep(poll_interval)
             continue
