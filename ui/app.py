@@ -78,6 +78,7 @@ def _list_runs() -> list[dict]:
             task = load_task(path)
             task_name = task.name
         except Exception:
+            task = None
             task_name = Path(path).stem
         runs.append({
             "run_id": None,
@@ -86,6 +87,9 @@ def _list_runs() -> list[dict]:
             "started": "",
             "started_raw": "",
             "status": "queued",
+            "model": task.model if task else None,
+            "gpus": task.gpus if task else None,
+            "gpu_type": task.gpu_type if task else None,
             "cost": None,
             "turns": None,
             "duration": None,
