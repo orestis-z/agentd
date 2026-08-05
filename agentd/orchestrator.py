@@ -229,7 +229,12 @@ def check_schedules(schedule_dir: Path, queue_dir: Path):
             except ValueError:
                 base = now
         else:
-            base = now
+            # No previous run — use get_prev to find the most recent cron
+            # match so the schedule can fire immediately if we're in a window
+            try:
+                base = Croniter(schedule, now).get_prev(datetime)
+            except Exception:
+                base = now
 
         try:
             cron = Croniter(schedule, base)

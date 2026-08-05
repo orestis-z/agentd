@@ -202,9 +202,11 @@ def _list_schedules() -> list[dict]:
         next_run = None
         if schedule:
             try:
-                base = datetime.fromisoformat(last_run_ts) if last_run_ts else now
-                cron = Croniter(schedule, base)
-                next_dt = cron.get_next(datetime)
+                if last_run_ts:
+                    base = datetime.fromisoformat(last_run_ts)
+                else:
+                    base = Croniter(schedule, now).get_prev(datetime)
+                next_dt = Croniter(schedule, base).get_next(datetime)
                 delta = (next_dt - now).total_seconds()
                 next_run = _format_delta(delta)
             except Exception:
@@ -535,9 +537,11 @@ def schedule_detail(filename):
     if schedule:
         try:
             now = datetime.now(timezone.utc)
-            base = datetime.fromisoformat(last_run_ts) if last_run_ts else now
-            cron = Croniter(schedule, base)
-            next_dt = cron.get_next(datetime)
+            if last_run_ts:
+                base = datetime.fromisoformat(last_run_ts)
+            else:
+                base = Croniter(schedule, now).get_prev(datetime)
+            next_dt = Croniter(schedule, base).get_next(datetime)
             delta = (next_dt - now).total_seconds()
             next_run = _format_delta(delta)
         except Exception:
