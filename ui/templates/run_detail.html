@@ -28,6 +28,15 @@
     </form>
 </div>
 
+{% if task_config %}
+<section>
+    <details>
+        <summary><h2 style="display:inline">Task Definition</h2></summary>
+        <pre class="log-event-json"><code class="language-json">{{ task_config }}</code></pre>
+    </details>
+</section>
+{% endif %}
+
 {% if result_text %}
 <section>
     <h2>Result</h2>

@@ -34,12 +34,12 @@
         <div class="form-row-group">
             <div class="form-row">
                 <label>Model</label>
-                <select name="model" id="f-model">
-                    <option value="">default</option>
-                    <option value="sonnet">sonnet</option>
-                    <option value="opus">opus</option>
-                    <option value="haiku">haiku</option>
-                </select>
+                <input type="text" name="model" id="f-model" list="model-list" placeholder="default">
+                <datalist id="model-list">
+                    <option value="sonnet">
+                    <option value="opus">
+                    <option value="haiku">
+                </datalist>
             </div>
             <div class="form-row">
                 <label>GPUs</label>

@@ -319,6 +319,12 @@ def run_detail(run_id):
 
     result_text = result.get("result") if result else None
 
+    task_config = None
+    if first.get("event") == "task_start":
+        tc = {k: v for k, v in first.items() if k not in ("event", "ts", "run_id") and v is not None}
+        if tc:
+            task_config = json.dumps(tc, indent=2)
+
     raw_events = []
     for e in events:
         raw_events.append({
@@ -330,6 +336,7 @@ def run_detail(run_id):
     return render_template(
         "run_detail.html",
         run=run_info,
+        task_config=task_config,
         timeline=timeline,
         error_info=error_info,
         result_text=result_text,

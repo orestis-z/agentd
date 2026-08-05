@@ -134,6 +134,7 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
             api_key = os.environ.get(task.anthropic_api_key_env, "")
         env_exports += f"export ANTHROPIC_BASE_URL='{task.anthropic_base_url}' && "
         env_exports += f"export ANTHROPIC_API_KEY='{api_key or 'dummy'}' && "
+        env_exports += "unset CLAUDE_CODE_USE_VERTEX CLOUD_ML_REGION ANTHROPIC_VERTEX_PROJECT_ID && "
     else:
         project_id = task.vertex_project_id or os.environ.get("ANTHROPIC_VERTEX_PROJECT_ID", "")
         region = task.cloud_ml_region or os.environ.get("CLOUD_ML_REGION", "")
