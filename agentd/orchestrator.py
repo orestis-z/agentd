@@ -227,22 +227,24 @@ def check_schedules(schedule_dir: Path, queue_dir: Path):
         if queue_path.exists() or running_marker.exists():
             continue
 
-        should_enqueue = False
         if last_file.exists():
             try:
                 base = datetime.fromisoformat(last_file.read_text().strip())
             except ValueError:
                 base = now
-            try:
-                next_run = Croniter(schedule, base).get_next(datetime)
-            except Exception:
-                print(f"WARNING: invalid cron expression in {path}: {schedule}")
-                continue
-            should_enqueue = now >= next_run
         else:
-            should_enqueue = True
+            # First seen — record creation time so cron runs from here
+            last_file.write_text(now.isoformat())
+            print(f"=== Registered new schedule: {data.get('name', slug)} ({schedule}) ===")
+            continue
 
-        if should_enqueue:
+        try:
+            next_run = Croniter(schedule, base).get_next(datetime)
+        except Exception:
+            print(f"WARNING: invalid cron expression in {path}: {schedule}")
+            continue
+
+        if now >= next_run:
             task_data = dict(data)
             task_data.pop("schedule", None)
             queue_dir.mkdir(parents=True, exist_ok=True)

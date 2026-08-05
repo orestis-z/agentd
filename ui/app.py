@@ -202,13 +202,10 @@ def _list_schedules() -> list[dict]:
         next_run = None
         if schedule:
             try:
-                if last_run_ts:
-                    base = datetime.fromisoformat(last_run_ts)
-                    next_dt = Croniter(schedule, base).get_next(datetime)
-                    delta = (next_dt - now).total_seconds()
-                    next_run = _format_delta(delta)
-                else:
-                    next_run = "now"
+                base = datetime.fromisoformat(last_run_ts) if last_run_ts else now
+                next_dt = Croniter(schedule, base).get_next(datetime)
+                delta = (next_dt - now).total_seconds()
+                next_run = _format_delta(delta)
             except Exception:
                 next_run = "invalid cron"
 
@@ -537,13 +534,10 @@ def schedule_detail(filename):
     if schedule:
         try:
             now = datetime.now(timezone.utc)
-            if last_run_ts:
-                base = datetime.fromisoformat(last_run_ts)
-                next_dt = Croniter(schedule, base).get_next(datetime)
-                delta = (next_dt - now).total_seconds()
-                next_run = _format_delta(delta)
-            else:
-                next_run = "now"
+            base = datetime.fromisoformat(last_run_ts) if last_run_ts else now
+            next_dt = Croniter(schedule, base).get_next(datetime)
+            delta = (next_dt - now).total_seconds()
+            next_run = _format_delta(delta)
         except Exception:
             next_run = "invalid cron"
 
