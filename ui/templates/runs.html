@@ -96,29 +96,10 @@
                 <input type="text" name="github_token_env" id="f-github_token_env" placeholder="GITHUB_TOKEN_MYBOT">
                 <span class="muted">Name of bastion env var containing the PAT (secret stays out of YAML)</span>
             </div>
-            <div class="form-row-group">
-                <div class="form-row">
-                    <label>Anthropic base URL</label>
-                    <input type="text" name="anthropic_base_url" id="f-anthropic_base_url" placeholder="http://vllm-svc:8000">
-                    <span class="muted">Custom endpoint (e.g. vLLM) — overrides Vertex AI</span>
-                </div>
-                <div class="form-row">
-                    <label>Anthropic API key env var</label>
-                    <input type="text" name="anthropic_api_key_env" id="f-anthropic_api_key_env" placeholder="MY_API_KEY">
-                    <span class="muted">Bastion env var name (optional)</span>
-                </div>
-            </div>
-            <div class="form-row-group">
-                <div class="form-row">
-                    <label>Vertex project ID</label>
-                    <input type="text" name="vertex_project_id" id="f-vertex_project_id" placeholder="my-gcp-project">
-                    <span class="muted">Overrides bastion default</span>
-                </div>
-                <div class="form-row">
-                    <label>Cloud ML region</label>
-                    <input type="text" name="cloud_ml_region" id="f-cloud_ml_region" placeholder="global">
-                    <span class="muted">Overrides bastion default</span>
-                </div>
+            <div class="form-row">
+                <label>Anthropic base URL</label>
+                <input type="text" name="anthropic_base_url" id="f-anthropic_base_url" placeholder="http://vllm-svc:8000">
+                <span class="muted">Custom endpoint (e.g. vLLM) — overrides Vertex AI</span>
             </div>
         </details>
         <button type="submit">Queue</button>
@@ -215,9 +196,6 @@ function loadTemplate(filename) {
         document.getElementById('f-git_email').value = '';
         document.getElementById('f-github_token_env').value = '';
         document.getElementById('f-anthropic_base_url').value = '';
-        document.getElementById('f-anthropic_api_key_env').value = '';
-        document.getElementById('f-vertex_project_id').value = '';
-        document.getElementById('f-cloud_ml_region').value = '';
         return;
     }
     fetch('{{ url_for("api_template", filename="__PH__") }}'.replace('__PH__', filename))
@@ -241,9 +219,6 @@ function loadTemplate(filename) {
             document.getElementById('f-git_email').value = d.git_email || '';
             document.getElementById('f-github_token_env').value = d.github_token_env || '';
             document.getElementById('f-anthropic_base_url').value = d.anthropic_base_url || '';
-            document.getElementById('f-anthropic_api_key_env').value = d.anthropic_api_key_env || '';
-            document.getElementById('f-vertex_project_id').value = d.vertex_project_id || '';
-            document.getElementById('f-cloud_ml_region').value = d.cloud_ml_region || '';
         });
 }
 
