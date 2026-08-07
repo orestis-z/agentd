@@ -109,6 +109,7 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
         "chmod g+rx /root && "
         "chmod -R g+rX /root/.config /root/.claude /root/.cache 2>/dev/null || true && "
         "chmod g+r /root/.claude/.credentials.json 2>/dev/null || true && "
+        "chmod -R g+wX /workspace 2>/dev/null || true && "
         f"{git_config}"
         "python3 -c '"
         'import json, pathlib; '
