@@ -13,6 +13,7 @@
 </dl>
 
 <div class="detail-actions">
+    <a class="btn" href="{{ url_for('index', duplicate_schedule=filename) }}">Duplicate</a>
     <form method="POST" action="{{ url_for('schedule_delete', filename=filename) }}" style="display:inline" onsubmit="return confirm('Delete schedule {{ name }}?')">
         <button type="submit" class="btn btn-danger">Delete</button>
     </form>

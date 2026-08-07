@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import glob
+import subprocess
 from pathlib import Path
 
 from datetime import datetime, timezone
@@ -226,9 +227,38 @@ def _list_schedules() -> list[dict]:
 def index():
     runs = _list_runs()
     task_names = sorted(set(r["task"] for r in runs))
+
+    duplicate_config = None
+    dup_run = request.args.get("duplicate_run")
+    dup_queue = request.args.get("duplicate_queue")
+    if dup_run:
+        log_path = os.path.join(LOG_DIR, f"{dup_run}.jsonl")
+        if os.path.isfile(log_path):
+            events = _read_all_events(log_path)
+            if events and events[0].get("event") == "task_start":
+                config = {k: v for k, v in events[0].items()
+                          if k not in ("event", "ts", "run_id") and v is not None}
+                config["name"] = config.pop("task", "")
+                duplicate_config = config
+    elif dup_queue:
+        for prefix in ("", ".running-"):
+            path = os.path.join(QUEUE_DIR, f"{prefix}{dup_queue}")
+            if os.path.isfile(path):
+                with open(path) as f:
+                    duplicate_config = yaml.safe_load(f) or {}
+                break
+    else:
+        dup_sched = request.args.get("duplicate_schedule")
+        if dup_sched:
+            path = os.path.join(SCHEDULE_DIR, dup_sched)
+            if os.path.isfile(path):
+                with open(path) as f:
+                    duplicate_config = yaml.safe_load(f) or {}
+
     return render_template(
         "runs.html", runs=runs, tasks=_list_tasks(),
         task_names=task_names, schedules=_list_schedules(),
+        duplicate_config=duplicate_config,
     )
 
 
@@ -397,6 +427,7 @@ def queue_detail(filename):
     return render_template(
         "run_detail.html",
         run=run_info,
+        queue_file=filename,
         task_config=task_config,
         timeline=[],
         error_info=None,
@@ -504,12 +535,41 @@ def run_detail(run_id):
     return render_template(
         "run_detail.html",
         run=run_info,
+        queue_file=None,
         task_config=task_config,
         timeline=timeline,
         error_info=error_info,
         result_text=result_text,
         raw_events=raw_events,
     )
+
+
+@app.route("/cancel-task/<filename>", methods=["POST"])
+def cancel_task(filename):
+    running_path = os.path.join(QUEUE_DIR, f".running-{filename}")
+    if not os.path.isfile(running_path):
+        flash("Task is not running.", "error")
+        return redirect(url_for("index"))
+
+    with open(running_path) as f:
+        data = yaml.safe_load(f) or {}
+
+    task_name = data.get("name", Path(filename).stem)
+    slug = task_name.lower().replace(" ", "-").replace("_", "-")
+    user = os.environ.get("USER", os.environ.get("LOGNAME", "unknown")).lower()
+    namespace = os.environ.get("DEVENV_NAMESPACE", "machine-learning")
+    pod = f"devenv-{user}-agentd-{slug}"
+
+    try:
+        subprocess.run(
+            ["oc", "delete", "pod", pod, "-n", namespace, "--wait=false"],
+            timeout=30, capture_output=True,
+        )
+        flash(f"Cancelling task: {task_name}", "success")
+    except Exception as e:
+        flash(f"Failed to cancel: {e}", "error")
+
+    return redirect(url_for("index"))
 
 
 @app.route("/schedule/<filename>")

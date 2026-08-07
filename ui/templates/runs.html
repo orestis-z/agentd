@@ -223,6 +223,9 @@
         </tbody>
     </table>
 </section>
+{% if duplicate_config %}
+<script>window._duplicateConfig = {{ duplicate_config | tojson }};</script>
+{% endif %}
 <script>
 function filterRuns() {
     var sel = document.getElementById('task-filter').value;
@@ -232,64 +235,46 @@ function filterRuns() {
     });
 }
 
+function fillForm(d) {
+    document.getElementById('f-name').value = d.name || '';
+    document.getElementById('f-prompt').value = d.prompt || '';
+    document.getElementById('f-skill').value = d.skill || '';
+    document.getElementById('f-skill_args').value = d.skill_args || '';
+    document.getElementById('skill-args-row').style.display = d.skill ? '' : 'none';
+    document.getElementById('f-schedule').value = d.schedule || '';
+    document.getElementById('f-model').value = d.model || '';
+    document.getElementById('f-gpus').value = d.gpus != null ? d.gpus : 0;
+    document.getElementById('f-gpu_type').value = d.gpu_type || 'a100';
+    document.getElementById('f-max_turns').value = d.max_turns || '';
+    document.getElementById('f-max_budget_usd').value = d.max_budget_usd || '';
+    document.getElementById('f-timeout').value = d.timeout || '';
+    document.getElementById('f-cwd').value = d.cwd || '';
+    document.getElementById('f-system_prompt').value = d.system_prompt || '';
+    document.getElementById('f-allowed_tools').value = (d.allowed_tools || []).join(', ');
+    document.getElementById('f-git_name').value = d.git_name || '';
+    document.getElementById('f-git_email').value = d.git_email || '';
+    document.getElementById('f-github_token_env').value = d.github_token_env || '';
+    document.getElementById('f-anthropic_base_url').value = d.anthropic_base_url || '';
+    var webhook = (d.notify && d.notify.slack_webhook_env) || '';
+    document.getElementById('f-slack_webhook_env').value = webhook;
+    document.getElementById('notify-on-row').style.display = webhook ? '' : 'none';
+    var notifyOn = (d.notify && d.notify.on) || ['failure'];
+    document.getElementById('f-notify_on_success').checked = notifyOn.indexOf('success') !== -1;
+    document.getElementById('f-notify_on_failure').checked = notifyOn.indexOf('failure') !== -1;
+    var hasSkill = !!(d.skill);
+    document.getElementById('f-prompt').required = !hasSkill;
+    document.getElementById('prompt-label').textContent = hasSkill ? 'Prompt' : 'Prompt *';
+    updateSubmitBtn();
+}
+
 function loadTemplate(filename) {
     if (!filename) {
-        document.getElementById('f-name').value = '';
-        document.getElementById('f-prompt').value = '';
-        document.getElementById('f-skill').value = '';
-        document.getElementById('f-skill_args').value = '';
-        document.getElementById('skill-args-row').style.display = 'none';
-        document.getElementById('f-schedule').value = '';
-        document.getElementById('f-model').value = '';
-        document.getElementById('f-gpus').value = '0';
-        document.getElementById('f-gpu_type').value = 'a100';
-        document.getElementById('f-max_turns').value = '';
-        document.getElementById('f-max_budget_usd').value = '';
-        document.getElementById('f-timeout').value = '';
-        document.getElementById('f-cwd').value = '';
-        document.getElementById('f-system_prompt').value = '';
-        document.getElementById('f-allowed_tools').value = '';
-        document.getElementById('f-git_name').value = '';
-        document.getElementById('f-git_email').value = '';
-        document.getElementById('f-github_token_env').value = '';
-        document.getElementById('f-anthropic_base_url').value = '';
-        document.getElementById('f-slack_webhook_env').value = '';
-        document.getElementById('f-notify_on_success').checked = false;
-        document.getElementById('f-notify_on_failure').checked = true;
-        document.getElementById('notify-on-row').style.display = 'none';
-        updateSubmitBtn();
+        fillForm({});
         return;
     }
     fetch('{{ url_for("api_template", filename="__PH__") }}'.replace('__PH__', filename))
         .then(function(r) { return r.json(); })
-        .then(function(d) {
-            document.getElementById('f-name').value = d.name || '';
-            document.getElementById('f-prompt').value = d.prompt || '';
-            document.getElementById('f-skill').value = d.skill || '';
-            document.getElementById('f-skill_args').value = d.skill_args || '';
-            document.getElementById('skill-args-row').style.display = d.skill ? '' : 'none';
-            document.getElementById('f-schedule').value = d.schedule || '';
-            document.getElementById('f-model').value = d.model || '';
-            document.getElementById('f-gpus').value = d.gpus != null ? d.gpus : 0;
-            document.getElementById('f-gpu_type').value = d.gpu_type || 'a100';
-            document.getElementById('f-max_turns').value = d.max_turns || '';
-            document.getElementById('f-max_budget_usd').value = d.max_budget_usd || '';
-            document.getElementById('f-timeout').value = d.timeout || '';
-            document.getElementById('f-cwd').value = d.cwd || '';
-            document.getElementById('f-system_prompt').value = d.system_prompt || '';
-            document.getElementById('f-allowed_tools').value = (d.allowed_tools || []).join(', ');
-            document.getElementById('f-git_name').value = d.git_name || '';
-            document.getElementById('f-git_email').value = d.git_email || '';
-            document.getElementById('f-github_token_env').value = d.github_token_env || '';
-            document.getElementById('f-anthropic_base_url').value = d.anthropic_base_url || '';
-            var webhook = (d.notify && d.notify.slack_webhook_env) || '';
-            document.getElementById('f-slack_webhook_env').value = webhook;
-            document.getElementById('notify-on-row').style.display = webhook ? '' : 'none';
-            var notifyOn = (d.notify && d.notify.on) || ['failure'];
-            document.getElementById('f-notify_on_success').checked = notifyOn.indexOf('success') !== -1;
-            document.getElementById('f-notify_on_failure').checked = notifyOn.indexOf('failure') !== -1;
-            updateSubmitBtn();
-        });
+        .then(fillForm);
 }
 
 function updateSubmitBtn() {
@@ -309,5 +294,11 @@ document.getElementById('f-skill').addEventListener('input', function() {
 document.getElementById('f-slack_webhook_env').addEventListener('input', function() {
     document.getElementById('notify-on-row').style.display = this.value.trim() ? '' : 'none';
 });
+
+if (window._duplicateConfig) {
+    fillForm(window._duplicateConfig);
+    document.querySelector('.launch-form').scrollIntoView({behavior: 'smooth'});
+    document.querySelector('.form-advanced').open = true;
+}
 </script>
 {% endblock %}
