@@ -515,6 +515,7 @@ def run_detail(run_id):
                 "tool": tool,
                 "detail": detail[:500],
                 "output": output[:2000] if output else None,
+                "is_tool": True,
             })
         elif ev == "assistant_message":
             text = e.get("text") or ""
@@ -534,6 +535,7 @@ def run_detail(run_id):
                         "event": ev,
                         "tool": tool,
                         "detail": detail[:500],
+                        "is_tool": True,
                     })
             elif text:
                 timeline.append({
