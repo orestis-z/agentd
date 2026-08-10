@@ -85,7 +85,15 @@
             <tr class="{% if event.event == 'security_deny' %}security-deny{% elif event.event == 'assistant_message' %}assistant-msg{% endif %}">
                 <td class="ts-col">{{ event.ts }}</td>
                 <td><code>{{ event.tool }}</code></td>
-                <td class="detail-col">{{ event.detail }}</td>
+                <td class="detail-col">
+                    {{ event.detail }}
+                    {% if event.output %}
+                    <details class="tool-output">
+                        <summary class="muted">output</summary>
+                        <pre class="tool-output-pre">{{ event.output }}</pre>
+                    </details>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>

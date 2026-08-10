@@ -68,13 +68,19 @@ async def security_hook(input_data, tool_use_id=None, context=None):
 async def logging_hook(input_data, tool_use_id=None, context=None):
     tool_name = getattr(input_data, "tool_name", None) or input_data.get("tool_name", "")
     tool_input = getattr(input_data, "tool_input", None) or input_data.get("tool_input", {})
+    tool_output = getattr(input_data, "tool_output", None) or input_data.get("tool_output", None)
     session_id = getattr(input_data, "session_id", None) or input_data.get("session_id", "")
 
-    _log({
+    record = {
         "event": "tool_use",
         "tool": tool_name,
         "input": tool_input,
         "session_id": session_id,
-    })
+    }
+    if tool_output is not None:
+        output_str = str(tool_output) if not isinstance(tool_output, str) else tool_output
+        record["output"] = output_str[:5000]
+
+    _log(record)
 
     return {}

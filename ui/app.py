@@ -492,11 +492,25 @@ def run_detail(run_id):
     for e in events:
         ev = e.get("event")
         if ev in ("tool_use", "security_deny"):
+            tool = e.get("tool", "")
+            tool_input = e.get("input", {})
+            if ev == "security_deny":
+                detail = e.get("reason", "")
+            elif tool == "Bash":
+                detail = tool_input.get("command", "") if isinstance(tool_input, dict) else str(tool_input)
+            elif tool in ("Read", "Write"):
+                detail = tool_input.get("file_path", "") if isinstance(tool_input, dict) else str(tool_input)
+            elif tool == "Edit":
+                detail = tool_input.get("file_path", "") if isinstance(tool_input, dict) else str(tool_input)
+            else:
+                detail = str(tool_input) if tool_input else ""
+            output = e.get("output")
             timeline.append({
                 "ts": _format_ts(e.get("ts", "")),
                 "event": ev,
-                "tool": e.get("tool", ""),
-                "detail": e.get("input", "") if ev == "tool_use" else e.get("reason", ""),
+                "tool": tool,
+                "detail": detail[:500],
+                "output": output[:2000] if output else None,
             })
         elif ev == "assistant_message":
             text = e.get("text") or ""
