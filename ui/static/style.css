@@ -200,7 +200,6 @@ details summary:hover { color: #c9d1d9; }
 .timeline-table tr.assistant-msg { background: #1c2333; }
 .timeline-table tr.assistant-msg td { color: #c9d1d9; }
 .timeline-table tr.assistant-msg .detail-col { white-space: pre-wrap; }
-.timeline-table .detail-col { white-space: pre-wrap; word-break: break-all; max-width: 600px; }
 
 .tool-output { margin-top: 4px; }
 .tool-output summary { font-size: 12px; cursor: pointer; }
