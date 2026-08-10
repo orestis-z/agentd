@@ -190,16 +190,15 @@ details summary:hover { color: #c9d1d9; }
 .timeline-table { font-size: 13px; }
 .timeline-table .ts-col { white-space: nowrap; color: #8b949e; }
 .timeline-table .detail-col {
-    max-width: 500px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    max-width: 600px;
+    white-space: pre-wrap;
+    word-break: break-all;
 }
 .timeline-table tr.security-deny { background: #2d1b1b; }
 .timeline-table tr.security-deny td { color: #f85149; }
 .timeline-table tr.assistant-msg { background: #1c2333; }
 .timeline-table tr.assistant-msg td { color: #c9d1d9; }
-.timeline-table tr.assistant-msg .detail-col { white-space: pre-wrap; }
+.timeline-table tr.assistant-msg .detail-col { word-break: break-word; }
 
 .tool-output { margin-top: 4px; }
 .tool-output summary { font-size: 12px; cursor: pointer; }
