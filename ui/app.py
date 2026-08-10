@@ -519,13 +519,29 @@ def run_detail(run_id):
         elif ev == "assistant_message":
             text = e.get("text") or ""
             tool_calls = e.get("tool_calls") or []
-            tools_summary = ", ".join(tc["tool"] for tc in tool_calls)
-            timeline.append({
-                "ts": _format_ts(e.get("ts", "")),
-                "event": ev,
-                "tool": f"Turn {e.get('turn', '?')}",
-                "detail": text[:300] if text else f"[{tools_summary}]" if tools_summary else "",
-            })
+            if tool_calls and not text:
+                for tc in tool_calls:
+                    tool = tc.get("tool", "")
+                    tool_input = tc.get("input") or {}
+                    if tool == "Bash":
+                        detail = tool_input.get("command", "") if isinstance(tool_input, dict) else str(tool_input)
+                    elif tool in ("Read", "Write", "Edit"):
+                        detail = tool_input.get("file_path", "") if isinstance(tool_input, dict) else str(tool_input)
+                    else:
+                        detail = str(tool_input) if tool_input else ""
+                    timeline.append({
+                        "ts": _format_ts(e.get("ts", "")),
+                        "event": ev,
+                        "tool": tool,
+                        "detail": detail[:500],
+                    })
+            elif text:
+                timeline.append({
+                    "ts": _format_ts(e.get("ts", "")),
+                    "event": ev,
+                    "tool": f"Turn {e.get('turn', '?')}",
+                    "detail": text[:300],
+                })
 
     error_info = None
     if result and result.get("is_error"):
