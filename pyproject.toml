@@ -6,6 +6,7 @@ requires-python = ">=3.10"
 dependencies = [
     "claude-agent-sdk",
     "croniter",
+    "flask",
     "pyyaml",
 ]
 
