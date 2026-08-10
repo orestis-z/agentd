@@ -337,6 +337,10 @@ def launch():
     except ValueError:
         pass
 
+    pre_run = request.form.get("pre_run", "").strip()
+    if pre_run:
+        task_data["pre_run"] = pre_run
+
     git_name = request.form.get("git_name", "").strip()
     if git_name:
         task_data["git_name"] = git_name

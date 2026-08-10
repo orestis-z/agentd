@@ -158,12 +158,17 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
         if webhook:
             env_exports += f"export {task.notify.slack_webhook_env}='{webhook}' && "
 
+    pre_run = ""
+    if task.pre_run:
+        pre_run = f"{task.pre_run} && "
+
+    agent_cmd = f"{pre_run}python -m agentd --task {remote_task_path}"
     result = subprocess.run(
         [
             "oc", "exec", pod, "-n", NAMESPACE, "--",
             "bash", "-c",
             f"{env_exports}"
-            f"sudo -E -u claude-runner python -m agentd --task {remote_task_path}",
+            f"sudo -E -u claude-runner bash -lc {repr(agent_cmd)}",
         ],
         timeout=timeout,
     )

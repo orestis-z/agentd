@@ -38,6 +38,7 @@ class TaskConfig:
     anthropic_api_key_env: str | None = None
     vertex_project_id: str | None = None
     cloud_ml_region: str | None = None
+    pre_run: str | None = None
     gpus: int | None = None
     gpu_type: str | None = None
     timeout: int | None = None
@@ -127,6 +128,7 @@ def load_task(path: str | Path) -> TaskConfig:
         anthropic_api_key_env=data.get("anthropic_api_key_env"),
         vertex_project_id=data.get("vertex_project_id"),
         cloud_ml_region=data.get("cloud_ml_region"),
+        pre_run=data.get("pre_run"),
         gpus=data.get("gpus"),
         gpu_type=data.get("gpu_type"),
         timeout=data.get("timeout"),

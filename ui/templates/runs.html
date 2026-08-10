@@ -86,6 +86,10 @@
                 <label>Allowed tools</label>
                 <input type="text" name="allowed_tools" id="f-allowed_tools" placeholder="Bash, Read, Write, Edit (comma-separated, blank = all)">
             </div>
+            <div class="form-row">
+                <label>Pre-run command</label>
+                <input type="text" name="pre_run" id="f-pre_run" placeholder="use speculators">
+            </div>
             <div class="form-row-group">
                 <div class="form-row">
                     <label>Git name</label>
@@ -251,6 +255,7 @@ function fillForm(d) {
     document.getElementById('f-cwd').value = d.cwd || '';
     document.getElementById('f-system_prompt').value = d.system_prompt || '';
     document.getElementById('f-allowed_tools').value = (d.allowed_tools || []).join(', ');
+    document.getElementById('f-pre_run').value = d.pre_run || '';
     document.getElementById('f-git_name').value = d.git_name || '';
     document.getElementById('f-git_email').value = d.git_email || '';
     document.getElementById('f-github_token_env').value = d.github_token_env || '';
