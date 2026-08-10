@@ -26,7 +26,7 @@ from agentd.config import load_task, resolve_skill
 
 NAMESPACE = os.environ.get("DEVENV_NAMESPACE", "machine-learning")
 DEFAULT_GPU_TYPE = "a100"
-DEFAULT_TIMEOUT = 3600
+DEFAULT_TIMEOUT = None
 STALE_POD_AGE = 14400  # 4 hours
 
 
@@ -307,7 +307,6 @@ def process_task(
         shutil.copy2(str(task_path), str(running_marker))
         provision_pod(task.name, gpus, gpu_type, devenv_dir)
         exit_code = run_task_in_pod(task_path, task, timeout)
-        copy_logs_out(task.name, log_dir)
 
         dest = completed_dir if exit_code == 0 else failed_dir
         dest.mkdir(parents=True, exist_ok=True)
@@ -320,6 +319,7 @@ def process_task(
         failed_dir.mkdir(parents=True, exist_ok=True)
         shutil.move(str(task_path), str(failed_dir / task_path.name))
     finally:
+        copy_logs_out(task.name, log_dir)
         running_marker.unlink(missing_ok=True)
         resolved = task_path.parent / f".resolved-{task_path.name}"
         resolved.unlink(missing_ok=True)
