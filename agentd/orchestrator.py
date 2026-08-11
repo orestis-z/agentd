@@ -104,7 +104,7 @@ def _resolve_task_for_pod(task_path: Path) -> Path:
 def provision_pod(task_name: str, gpus: int, gpu_type: str, devenv_dir: Path):
     instance = _instance_name(task_name)
     print(f"=== Provisioning pod {pod_name(task_name)} ({gpus}x {gpu_type}) ===")
-    subprocess.run(
+    result = subprocess.run(
         [
             str(devenv_dir / "launch.sh"),
             "--name", instance,
@@ -114,6 +114,8 @@ def provision_pod(task_name: str, gpus: int, gpu_type: str, devenv_dir: Path):
         ],
         stdin=subprocess.DEVNULL,
     )
+    if result.returncode != 0:
+        raise RuntimeError(f"launch.sh failed with exit code {result.returncode}")
     _run_cmd([
         "oc", "wait", "--for=condition=Ready",
         f"pod/{pod_name(task_name)}", "-n", NAMESPACE, "--timeout=1800s",
@@ -339,7 +341,8 @@ def process_task(
     gpu_type = task.gpu_type or DEFAULT_GPU_TYPE
     timeout = task.timeout if task.timeout is not None else DEFAULT_TIMEOUT
 
-    print(f"\n=== Task: {task.name} | {gpus}x {gpu_type} | timeout {timeout}s ===")
+    timeout_str = f"{timeout}s" if timeout else "none"
+    print(f"\n=== Task: {task.name} | {gpus}x {gpu_type} | timeout {timeout_str} ===")
 
     running_marker = task_path.parent / f".running-{task_path.name}"
     try:
