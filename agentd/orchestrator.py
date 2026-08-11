@@ -43,8 +43,42 @@ def pod_name(task_name: str) -> str:
     return f"devenv-{_user()}-{_instance_name(task_name)}"
 
 
+def _oc_login():
+    server = os.environ.get("OC_LOGIN_SERVER", "")
+    password = os.environ.get("OC_LOGIN_PASSWORD", "")
+    if not server or not password:
+        return False
+    result = subprocess.run(
+        ["oc", "login", server, "--insecure-skip-tls-verify",
+         "-u", _user(), "-p", password],
+        capture_output=True, text=True,
+    )
+    if result.returncode == 0:
+        print("=== Re-authenticated with OpenShift ===")
+        return True
+    print(f"WARNING: oc login failed: {result.stderr.strip()}")
+    return False
+
+
+def _is_auth_error(exc):
+    msg = str(exc).lower()
+    stderr = ""
+    if hasattr(exc, "stderr") and exc.stderr:
+        stderr = exc.stderr.decode() if isinstance(exc.stderr, bytes) else exc.stderr
+        stderr = stderr.lower()
+    return any(k in msg or k in stderr for k in (
+        "unauthorized", "forbidden", "must be logged in",
+        "token has expired", "login",
+    ))
+
+
 def _run_cmd(cmd, **kwargs):
-    return subprocess.run(cmd, check=True, **kwargs)
+    try:
+        return subprocess.run(cmd, check=True, **kwargs)
+    except subprocess.CalledProcessError as e:
+        if _is_auth_error(e) and _oc_login():
+            return subprocess.run(cmd, check=True, **kwargs)
+        raise
 
 
 def _resolve_task_for_pod(task_path: Path) -> Path:
@@ -168,7 +202,7 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
             "oc", "exec", pod, "-n", NAMESPACE, "--",
             "bash", "-c",
             f"{env_exports}"
-            f"sudo -E -u claude-runner bash -c {repr(agent_cmd)}",
+            f"sudo -E -u claude-runner bash -i -c {repr(agent_cmd)}",
         ],
         timeout=timeout,
     )
