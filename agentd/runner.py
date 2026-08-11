@@ -94,80 +94,63 @@ async def run(task_path: str, dry_run: bool = False) -> int:
         total_cost = 0.0
         total_duration = 0
 
-        original_prompt = task.prompt or "Follow the instructions in the system prompt."
-        prompt = original_prompt
-        max_continuations = 2
+        prompt = task.prompt or "Follow the instructions in the system prompt."
 
-        for continuation in range(1 + max_continuations):
-            try:
-                async for msg in query(prompt=prompt, options=options):
-                    content = getattr(msg, "content", None)
-                    if content is not None and isinstance(content, list):
-                        total_turns += 1
-                        text_parts = []
-                        tool_calls = []
-                        for block in content:
-                            cls = type(block).__name__
-                            if cls == "TextBlock" or (isinstance(block, dict) and block.get("type") == "text"):
-                                text_parts.append(getattr(block, "text", "") or (block.get("text", "") if isinstance(block, dict) else ""))
-                            elif cls == "ToolUseBlock" or (isinstance(block, dict) and block.get("type") == "tool_use"):
-                                tool_calls.append({
-                                    "tool": getattr(block, "name", "") or (block.get("name", "") if isinstance(block, dict) else ""),
-                                    "input": getattr(block, "input", None) or (block.get("input") if isinstance(block, dict) else None),
-                                })
-                        _log({
-                            "event": "assistant_message",
-                            "turn": total_turns,
-                            "text": "\n".join(text_parts) if text_parts else None,
-                            "tool_calls": tool_calls or None,
-                        })
-                    elif hasattr(msg, "result"):
-                        total_cost += getattr(msg, "total_cost_usd", None) or 0.0
-                        total_duration += getattr(msg, "duration_ms", None) or 0
-                        result_text = msg.result
-                        exit_code = 1 if getattr(msg, "is_error", False) else 0
-                        _log({
-                            "event": "task_result",
-                            "task": task.name,
-                            "is_error": getattr(msg, "is_error", False),
-                            "subtype": getattr(msg, "subtype", None),
-                            "result": result_text,
-                            "num_turns": total_turns,
-                            "total_cost_usd": total_cost,
-                            "duration_ms": total_duration,
-                        })
-                        print(result_text)
-            except Exception as exc:
-                import traceback
-                error_text = traceback.format_exc()
-                _log({
-                    "event": "task_result",
-                    "task": task.name,
-                    "is_error": True,
-                    "subtype": "crash",
-                    "error": str(exc),
-                    "traceback": error_text,
-                    "num_turns": total_turns,
-                    "total_cost_usd": total_cost,
-                    "duration_ms": total_duration,
-                })
-                result_text = result_text or str(exc)
-                print(error_text, file=sys.stderr)
-                exit_code = 2
-                break
-
-            if exit_code != 0 or continuation >= max_continuations:
-                break
-
-            _log({"event": "continuation", "attempt": continuation + 1})
-            prompt = (
-                "The previous agent session ended but the task may not be complete. "
-                "Check the current state of the work (files, processes, logs) and "
-                "determine if there are remaining steps. If the task is fully complete, "
-                "provide a final summary of what was accomplished. If not, continue "
-                "from where you left off.\n\n"
-                f"Original task: {original_prompt}"
-            )
+        try:
+            async for msg in query(prompt=prompt, options=options):
+                content = getattr(msg, "content", None)
+                if content is not None and isinstance(content, list):
+                    total_turns += 1
+                    text_parts = []
+                    tool_calls = []
+                    for block in content:
+                        cls = type(block).__name__
+                        if cls == "TextBlock" or (isinstance(block, dict) and block.get("type") == "text"):
+                            text_parts.append(getattr(block, "text", "") or (block.get("text", "") if isinstance(block, dict) else ""))
+                        elif cls == "ToolUseBlock" or (isinstance(block, dict) and block.get("type") == "tool_use"):
+                            tool_calls.append({
+                                "tool": getattr(block, "name", "") or (block.get("name", "") if isinstance(block, dict) else ""),
+                                "input": getattr(block, "input", None) or (block.get("input") if isinstance(block, dict) else None),
+                            })
+                    _log({
+                        "event": "assistant_message",
+                        "turn": total_turns,
+                        "text": "\n".join(text_parts) if text_parts else None,
+                        "tool_calls": tool_calls or None,
+                    })
+                elif hasattr(msg, "result"):
+                    total_cost += getattr(msg, "total_cost_usd", None) or 0.0
+                    total_duration += getattr(msg, "duration_ms", None) or 0
+                    result_text = msg.result
+                    exit_code = 1 if getattr(msg, "is_error", False) else 0
+                    _log({
+                        "event": "task_result",
+                        "task": task.name,
+                        "is_error": getattr(msg, "is_error", False),
+                        "subtype": getattr(msg, "subtype", None),
+                        "result": result_text,
+                        "num_turns": total_turns,
+                        "total_cost_usd": total_cost,
+                        "duration_ms": total_duration,
+                    })
+                    print(result_text)
+        except Exception as exc:
+            import traceback
+            error_text = traceback.format_exc()
+            _log({
+                "event": "task_result",
+                "task": task.name,
+                "is_error": True,
+                "subtype": "crash",
+                "error": str(exc),
+                "traceback": error_text,
+                "num_turns": total_turns,
+                "total_cost_usd": total_cost,
+                "duration_ms": total_duration,
+            })
+            result_text = result_text or str(exc)
+            print(error_text, file=sys.stderr)
+            exit_code = 2
 
         result_metadata = {
             "num_turns": total_turns,

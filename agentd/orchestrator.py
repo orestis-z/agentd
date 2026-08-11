@@ -165,6 +165,26 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
     if result.returncode != 0:
         raise RuntimeError(f"Pod setup failed (exit {result.returncode})")
 
+    cwd = task.cwd or "/workspace"
+    agentd_rules = (
+        "# agentd rules (auto-injected)\n"
+        "Do NOT use git worktrees or the EnterWorktree tool — work directly in the repository.\n"
+        "Each Bash tool call runs in a fresh shell — environment variables, venv activation, "
+        "and cd do not persist across calls. Use absolute paths and set variables within the same command.\n"
+    )
+    _run_cmd([
+        "oc", "exec", pod, "-n", NAMESPACE, "--",
+        "bash", "-c",
+        f"mkdir -p {cwd}/.claude && "
+        f"RULES={repr(agentd_rules)} && "
+        f"if [ -f {cwd}/.claude/CLAUDE.md ]; then "
+        f"  grep -q 'agentd rules' {cwd}/.claude/CLAUDE.md || "
+        f"  printf '\\n%s' \"$RULES\" >> {cwd}/.claude/CLAUDE.md; "
+        f"else "
+        f"  printf '%s' \"$RULES\" > {cwd}/.claude/CLAUDE.md; "
+        f"fi",
+    ])
+
     resolved_task_path = _resolve_task_for_pod(task_path)
     _run_cmd([
         "oc", "cp", str(resolved_task_path),
