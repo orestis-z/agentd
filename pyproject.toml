@@ -6,11 +6,11 @@ requires-python = ">=3.10"
 dependencies = [
     "claude-agent-sdk",
     "croniter",
-    "flask",
     "pyyaml",
 ]
 
 [project.optional-dependencies]
+ui = ["flask"]
 test = ["pytest", "pytest-asyncio"]
 
 [project.scripts]
