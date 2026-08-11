@@ -131,12 +131,10 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
     if task.git_email:
         git_config += f"git config --global user.email '{task.git_email}' && "
 
-    _run_cmd([
-        "oc", "exec", pod, "-n", NAMESPACE, "--",
-        "bash", "-c",
-        "set -e && "
-        "pip install git+https://github.com/orestis-z/agentd.git && "
+    setup_script = (
+        "set -ex && "
         f"mkdir -p {remote_task_dir} /tmp/agentd-logs && chmod 1777 /tmp/agentd-logs && "
+        "pip install git+https://github.com/orestis-z/agentd.git && "
         "WS_GID=$(stat -c '%g' /workspace 2>/dev/null || echo 0) && "
         "getent group $WS_GID &>/dev/null || groupadd -g $WS_GID workspace && "
         "id claude-runner &>/dev/null 2>&1 || useradd -M -d /root -g $WS_GID -G 0 claude-runner && "
@@ -152,8 +150,19 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
         'p = pathlib.Path("/root/.claude.json"); '
         'data = json.loads(p.read_text()) if p.exists() else {}; '
         'data.setdefault("projects", {})["/workspace"] = {"hasTrustDialogAccepted": True}; '
-        "p.write_text(json.dumps(data))'",
-    ])
+        "p.write_text(json.dumps(data))'"
+    )
+    print("=== Running pod setup ===")
+    result = subprocess.run(
+        ["oc", "exec", pod, "-n", NAMESPACE, "--", "bash", "-c", setup_script],
+        capture_output=True, text=True,
+    )
+    if result.stdout:
+        print(result.stdout)
+    if result.stderr:
+        print(result.stderr)
+    if result.returncode != 0:
+        raise RuntimeError(f"Pod setup failed (exit {result.returncode})")
 
     resolved_task_path = _resolve_task_for_pod(task_path)
     _run_cmd([
