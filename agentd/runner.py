@@ -63,8 +63,16 @@ async def run(task_path: str, dry_run: bool = False) -> int:
         options = ClaudeAgentOptions(
             permission_mode="bypassPermissions",
         )
+        agentd_preamble = (
+            "You are running as an automated agent (agentd). "
+            "Do NOT use git worktrees or EnterWorktree — work directly in the repository. "
+            "Each Bash tool call runs in a fresh shell — use absolute paths for Python "
+            "and set environment variables within the same command, not across calls."
+        )
         if task.system_prompt:
-            options.system_prompt = task.system_prompt
+            options.system_prompt = agentd_preamble + "\n\n" + task.system_prompt
+        else:
+            options.system_prompt = agentd_preamble
         if task.allowed_tools:
             options.allowed_tools = task.allowed_tools
         if task.max_turns is not None:
