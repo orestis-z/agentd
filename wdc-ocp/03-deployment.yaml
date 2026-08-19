@@ -1,0 +1,82 @@
+# agentd-ui pod:
+#   - oauth-proxy (public :8443, TLS via wildcard *.apps cert) authenticates the user
+#     against the cluster OAuth server and forwards authed requests to the app.
+#   - agentd-ui (Flask/gunicorn on :5000) is the upstream; logs written to emptyDir.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentd-ui
+  namespace: agentd-ui
+  labels:
+    app: agentd-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agentd-ui
+  template:
+    metadata:
+      labels:
+        app: agentd-ui
+    spec:
+      serviceAccountName: agentd-ui
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 0
+      containers:
+        - name: oauth-proxy
+          image: registry.redhat.io/openshift4/ose-oauth-proxy-rhel9@sha256:c7079c7e8625aade224165d627e5d0714ec1c1471a6377b4941e4a042b19efaa
+          ports:
+            - name: public
+              containerPort: 8443
+          args:
+            - --provider=openshift
+            - --https-address=:8443
+            - --upstream=http://localhost:5000
+            - --openshift-service-account=agentd-ui
+            - --redirect-url=https://agentd-ui.apps.oc-nm-upstream-wdc.washington.nmopenshift.com/oauth/callback
+            - --tls-cert=/etc/tls/private/tls.crt
+            - --tls-key=/etc/tls/private/tls.key
+            - --cookie-secret-file=/etc/proxy/secrets/session_secret
+            - --cookie-secure=true
+            - --pass-access-token
+            - --pass-user-headers
+            - --email-domain=*
+          volumeMounts:
+            - { name: tls, mountPath: /etc/tls/private }
+            - { name: cookie, mountPath: /etc/proxy/secrets }
+        - name: ui
+          image: ghcr.io/orestis-z/agentd-ui:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - { name: AGENTD_LOG_DIR, value: /data/logs }
+            - { name: AGENTD_QUEUE_DIR, value: /data/queue }
+            - { name: AGENTD_SCHEDULE_DIR, value: /data/schedules }
+            - { name: AGENTD_TASK_DIR, value: /tasks }
+            - { name: CLAUDE_CODE_USE_VERTEX, value: "1" }
+            - { name: CLOUD_ML_REGION, value: "global" }
+            - { name: ANTHROPIC_VERTEX_PROJECT_ID, value: "itpc-gcp-ai-eng-claude" }
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: tasks, mountPath: /tasks }
+      volumes:
+        - name: tls
+          secret:
+            secretName: agentd-ui-wildcard-tls
+        - name: cookie
+          secret:
+            secretName: agentd-ui-cookie
+        - name: data
+          persistentVolumeClaim:
+            claimName: agentd-shared
+        - name: tasks
+          configMap:
+            name: agentd-tasks

@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ${POD_NAME}
+  namespace: machine-learning
+  labels:
+    app: devenv
+    user: ${USER}
+spec:
+  serviceAccountName: ml-workload
+  containers:
+    - name: devenv
+      image: ghcr.io/${DEVENV_OWNER}/devenv:${IMAGE_TAG}
+      imagePullPolicy: Always
+      command: ["/entrypoint.sh"]
+      stdin: true
+      tty: true
+      securityContext:
+        runAsUser: 0
+      ports:
+        - containerPort: 22
+          name: ssh
+        - containerPort: 6379
+          name: ray-gcs
+        - containerPort: 8265
+          name: ray-dashboard
+        - containerPort: 29500
+          name: torchrun
+      env:
+        - name: DEVENV_CLUSTER
+          value: "${DEVENV_CLUSTER}"
+        - name: DEVENV_INSTANCE
+          value: "${INSTANCE}"
+        - name: USER
+          value: "${USER}"
+      resources:
+        limits:
+          nvidia.com/gpu: "${GPU_COUNT}"
+      volumeMounts:
+        - name: dshm
+          mountPath: /dev/shm
+        - name: repos
+          mountPath: /workspace
+        - name: hf-cache
+          mountPath: /root/.cache/huggingface
+        - name: pip-cache
+          mountPath: /pip-cache
+        - name: config
+          mountPath: /root/.config
+          subPath: dotconfig
+        - name: config
+          mountPath: /root/.claude
+          subPath: claude
+        - name: config
+          mountPath: /root/.ssh
+          subPath: ssh
+        - name: config
+          mountPath: /root/.vscode
+          subPath: ${VSCODE_SUBPATH}
+  volumes:
+    - name: repos
+      persistentVolumeClaim:
+        claimName: ${REPOS_PVC}
+    - name: hf-cache
+      persistentVolumeClaim:
+        claimName: devenv-hf-cache
+    - name: pip-cache
+      persistentVolumeClaim:
+        claimName: devenv-pip-cache-${USER}
+    - name: config
+      persistentVolumeClaim:
+        claimName: devenv-config-${USER}
+    - name: dshm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 64Gi
+  restartPolicy: Never

@@ -1,0 +1,76 @@
+# agentd orchestrator — watches /data/queue, provisions GPU devenv pods via launch.sh,
+# runs agentd inside them, copies logs to /data/logs, tears them down.
+#
+# Init container: copies the oc binary from ose-cli into /tools (added to PATH).
+# devenv scripts (launch.sh + k8s/) are baked into the devenv-scripts ConfigMap by apply.sh.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentd-orchestrator
+  namespace: agentd-ui
+  labels:
+    app: agentd-orchestrator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agentd-orchestrator
+  template:
+    metadata:
+      labels:
+        app: agentd-orchestrator
+    spec:
+      serviceAccountName: agentd-orchestrator
+      initContainers:
+        - name: copy-oc
+          image: registry.redhat.io/openshift4/ose-cli:latest
+          command: [cp, /usr/bin/oc, /tools/oc]
+          volumeMounts:
+            - { name: tools, mountPath: /tools }
+      containers:
+        - name: orchestrator
+          image: python:3.12-slim
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              apt-get update -qq && apt-get install -y -qq git
+              pip install --no-cache-dir git+https://github.com/orestis-z/agentd.git
+              exec agentd-orchestrate \
+                --queue /data/queue \
+                --devenv-dir /devenv \
+                --log-dir /data/logs \
+                --schedule-dir /data/schedules \
+                --poll-interval 30 \
+                --namespace machine-learning
+          env:
+            - { name: USER, value: agentd-ui }
+            - { name: CLAUDE_CODE_USE_VERTEX, value: "1" }
+            - { name: CLOUD_ML_REGION, value: "global" }
+            - { name: ANTHROPIC_VERTEX_PROJECT_ID, value: "itpc-gcp-ai-eng-claude" }
+            - name: PATH
+              value: /tools:/usr/local/bin:/usr/bin:/bin
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: tools, mountPath: /tools }
+            - { name: devenv-scripts, mountPath: /devenv/launch.sh, subPath: launch.sh }
+            - { name: devenv-scripts, mountPath: /devenv/k8s/pod.yml, subPath: pod.yml }
+            - { name: devenv-scripts, mountPath: /devenv/k8s/headless-service.yml, subPath: headless-service.yml }
+            - { name: devenv-scripts, mountPath: /devenv/k8s/setup-repos.sh, subPath: setup-repos.sh }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: agentd-shared
+        - name: tools
+          emptyDir: {}
+        - name: devenv-scripts
+          configMap:
+            name: devenv-scripts
+            defaultMode: 0755

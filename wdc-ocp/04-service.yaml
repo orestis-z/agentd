@@ -1,0 +1,17 @@
+# Dedicated PUBLIC IBM Cloud VPC LoadBalancer for agentd-ui -> oauth-proxy :8443.
+# L4 passthrough: oauth-proxy terminates TLS with the wildcard *.apps cert.
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentd-ui
+  namespace: agentd-ui
+  labels:
+    app: agentd-ui
+spec:
+  type: LoadBalancer
+  selector:
+    app: agentd-ui
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8443
