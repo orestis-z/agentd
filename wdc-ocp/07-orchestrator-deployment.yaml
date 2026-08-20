@@ -42,7 +42,7 @@ spec:
               mkdir -p /devenv/k8s
               cp /devenv-cm-k8s/* /devenv/k8s/
               chmod +x /devenv/launch.sh
-              git -C /devenv init -q && git -C /devenv add -A && git -C /devenv commit -qm init
+              git -C /devenv init -q && git -C /devenv add -A && git -C /devenv -c user.name=agentd -c user.email=agentd@local commit -qm init
               exec agentd-orchestrate \
                 --queue /data/queue \
                 --devenv-dir /devenv \
