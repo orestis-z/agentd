@@ -35,8 +35,7 @@ def _user() -> str:
 
 
 def _instance_name(task_name: str) -> str:
-    slug = task_name.lower().replace(" ", "-").replace("_", "-")
-    return f"agentd-{slug}"
+    return task_name.lower().replace(" ", "-").replace("_", "-")
 
 
 def pod_name(task_name: str) -> str:
