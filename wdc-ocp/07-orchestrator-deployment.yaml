@@ -36,6 +36,13 @@ spec:
               set -e
               apt-get update -qq && apt-get install -y -qq git
               pip install --no-cache-dir git+https://github.com/orestis-z/agentd.git
+              # Copy ConfigMap scripts to a writable dir and init a dummy git repo
+              # so launch.sh's auto-update block is a harmless no-op.
+              cp -a /devenv-cm/. /devenv/
+              mkdir -p /devenv/k8s
+              cp /devenv-cm-k8s/* /devenv/k8s/
+              chmod +x /devenv/launch.sh
+              git -C /devenv init -q && git -C /devenv add -A && git -C /devenv commit -qm init
               exec agentd-orchestrate \
                 --queue /data/queue \
                 --devenv-dir /devenv \
@@ -60,15 +67,18 @@ spec:
           volumeMounts:
             - { name: data, mountPath: /data }
             - { name: tools, mountPath: /tools }
-            - { name: devenv-scripts, mountPath: /devenv/launch.sh, subPath: launch.sh }
-            - { name: devenv-scripts, mountPath: /devenv/k8s/pod.yml, subPath: pod.yml }
-            - { name: devenv-scripts, mountPath: /devenv/k8s/headless-service.yml, subPath: headless-service.yml }
-            - { name: devenv-scripts, mountPath: /devenv/k8s/setup-repos.sh, subPath: setup-repos.sh }
+            - { name: devenv, mountPath: /devenv }
+            - { name: devenv-scripts, mountPath: /devenv-cm/launch.sh, subPath: launch.sh }
+            - { name: devenv-scripts, mountPath: /devenv-cm-k8s/pod.yml, subPath: pod.yml }
+            - { name: devenv-scripts, mountPath: /devenv-cm-k8s/headless-service.yml, subPath: headless-service.yml }
+            - { name: devenv-scripts, mountPath: /devenv-cm-k8s/setup-repos.sh, subPath: setup-repos.sh }
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: agentd-shared
         - name: tools
+          emptyDir: {}
+        - name: devenv
           emptyDir: {}
         - name: devenv-scripts
           configMap:
