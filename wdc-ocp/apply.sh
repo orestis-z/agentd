@@ -25,7 +25,22 @@ oc create secret generic agentd-ui-cookie -n "$NS" \
   --dry-run=client -o yaml | oc apply -f -
 
 echo "==> tasks ConfigMap"
-oc apply -f 02-configmap-tasks.yaml
+TASK_DIR="${TASK_DIR:-$(cd "$(dirname "$0")/.." && pwd)/tasks}"
+if [ ! -d "$TASK_DIR" ]; then
+  echo "ERROR: tasks dir not found at $TASK_DIR"
+  echo "  Set TASK_DIR to the path containing task YAML files"
+  exit 1
+fi
+TASK_FILES=()
+for f in "$TASK_DIR"/*.yml; do
+  [ -f "$f" ] && TASK_FILES+=(--from-file="$(basename "$f")"="$f")
+done
+if [ ${#TASK_FILES[@]} -eq 0 ]; then
+  echo "WARNING: no *.yml files found in $TASK_DIR"
+fi
+oc create configmap agentd-tasks -n "$NS" \
+  "${TASK_FILES[@]}" \
+  --dry-run=client -o yaml | oc apply -f -
 
 echo "==> shared PVC (queue + logs + schedules)"
 oc apply -f 05-shared-pvc.yaml
