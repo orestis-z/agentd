@@ -44,11 +44,17 @@ echo "==> orchestrator RBAC"
 oc apply -f 06-orchestrator-rbac.yaml
 
 echo "==> devenv scripts ConfigMap"
+DEVENV_DIR="${DEVENV_DIR:-$(cd "$(dirname "$0")/../.." && pwd)/devenv}"
+if [ ! -f "$DEVENV_DIR/launch.sh" ]; then
+  echo "ERROR: devenv repo not found at $DEVENV_DIR"
+  echo "  Set DEVENV_DIR to the path of your devenv checkout"
+  exit 1
+fi
 oc create configmap devenv-scripts -n "$NS" \
-  --from-file=launch.sh=devenv/launch.sh \
-  --from-file=pod.yml=devenv/k8s/pod.yml \
-  --from-file=headless-service.yml=devenv/k8s/headless-service.yml \
-  --from-file=setup-repos.sh=devenv/k8s/setup-repos.sh \
+  --from-file=launch.sh="$DEVENV_DIR/launch.sh" \
+  --from-file=pod.yml="$DEVENV_DIR/k8s/pod.yml" \
+  --from-file=headless-service.yml="$DEVENV_DIR/k8s/headless-service.yml" \
+  --from-file=setup-repos.sh="$DEVENV_DIR/k8s/setup-repos.sh" \
   --dry-run=client -o yaml | oc apply -f -
 
 echo "==> UI deployment"
