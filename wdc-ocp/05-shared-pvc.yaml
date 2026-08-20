@@ -4,7 +4,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: agentd-shared
-  namespace: agentd-ui
+  namespace: agentd
 spec:
   accessModes:
     - ReadWriteMany

@@ -6,7 +6,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: agentd-ui
-  namespace: agentd-ui
+  namespace: agentd
   labels:
     app: agentd-ui
 spec:
@@ -34,7 +34,7 @@ spec:
             - --https-address=:8443
             - --upstream=http://localhost:5000
             - --openshift-service-account=agentd-ui
-            - --redirect-url=https://agentd-ui.apps.oc-nm-upstream-wdc.washington.nmopenshift.com/oauth/callback
+            - --redirect-url=https://agentd.apps.oc-nm-upstream-wdc.washington.nmopenshift.com/oauth/callback
             - --tls-cert=/etc/tls/private/tls.crt
             - --tls-key=/etc/tls/private/tls.key
             - --cookie-secret-file=/etc/proxy/secrets/session_secret

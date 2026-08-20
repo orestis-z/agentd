@@ -2,8 +2,8 @@
 # Deploy agentd-ui. Idempotent — safe to re-run.
 set -euo pipefail
 cd "$(dirname "$0")"
-NS=agentd-ui
-HOST=agentd-ui.apps.oc-nm-upstream-wdc.washington.nmopenshift.com
+NS=agentd
+HOST=agentd.apps.oc-nm-upstream-wdc.washington.nmopenshift.com
 
 echo "==> namespace + rbac"
 oc apply -f 00-namespace.yaml

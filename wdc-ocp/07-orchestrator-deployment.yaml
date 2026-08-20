@@ -7,7 +7,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: agentd-orchestrator
-  namespace: agentd-ui
+  namespace: agentd
   labels:
     app: agentd-orchestrator
 spec:
@@ -44,7 +44,7 @@ spec:
                 --poll-interval 30 \
                 --namespace machine-learning
           env:
-            - { name: USER, value: agentd-ui }
+            - { name: USER, value: agentd }
             - { name: CLAUDE_CODE_USE_VERTEX, value: "1" }
             - { name: CLOUD_ML_REGION, value: "global" }
             - { name: ANTHROPIC_VERTEX_PROJECT_ID, value: "itpc-gcp-ai-eng-claude" }

@@ -5,9 +5,9 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: agentd-ui
-  namespace: agentd-ui
+  namespace: agentd
   annotations:
-    serviceaccounts.openshift.io/oauth-redirecturi.primary: "https://agentd-ui.apps.oc-nm-upstream-wdc.washington.nmopenshift.com/oauth/callback"
+    serviceaccounts.openshift.io/oauth-redirecturi.primary: "https://agentd.apps.oc-nm-upstream-wdc.washington.nmopenshift.com/oauth/callback"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -20,7 +20,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: agentd-ui
-    namespace: agentd-ui
+    namespace: agentd
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -33,4 +33,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: agentd-ui
-    namespace: agentd-ui
+    namespace: agentd
