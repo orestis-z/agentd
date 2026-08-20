@@ -104,7 +104,7 @@ def _resolve_task_for_pod(task_path: Path) -> Path:
 def provision_pod(task_name: str, gpus: int, gpu_type: str, devenv_dir: Path):
     instance = _instance_name(task_name)
     print(f"=== Provisioning pod {pod_name(task_name)} ({gpus}x {gpu_type}) ===")
-    subprocess.run(
+    result = subprocess.run(
         [
             str(devenv_dir / "launch.sh"),
             "--name", instance,
@@ -114,6 +114,8 @@ def provision_pod(task_name: str, gpus: int, gpu_type: str, devenv_dir: Path):
         ],
         stdin=subprocess.DEVNULL,
     )
+    if result.returncode != 0:
+        raise RuntimeError(f"launch.sh failed (exit {result.returncode})")
     _run_cmd([
         "oc", "wait", "--for=condition=Ready",
         f"pod/{pod_name(task_name)}", "-n", NAMESPACE, "--timeout=1800s",
@@ -268,11 +270,18 @@ def teardown_pod(task_name: str, devenv_dir: Path):
     pvc = f"devenv-workspace-{_user()}-{instance}"
     try:
         subprocess.run(
-            ["oc", "delete", "pvc", pvc, "-n", NAMESPACE, "--wait=false"],
-            timeout=60,
+            ["oc", "delete", "pvc", pvc, "-n", NAMESPACE],
+            timeout=120,
         )
     except Exception:
-        pass
+        try:
+            subprocess.run(
+                ["oc", "patch", "pvc", pvc, "-n", NAMESPACE,
+                 "-p", '{"metadata":{"finalizers":null}}'],
+                timeout=30,
+            )
+        except Exception:
+            pass
 
 
 def check_schedules(schedule_dir: Path, queue_dir: Path):
