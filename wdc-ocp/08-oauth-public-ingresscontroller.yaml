@@ -1,0 +1,24 @@
+# Dedicated PUBLIC IngressController that exposes ONLY the cluster OAuth server route
+# (oauth-openshift in openshift-authentication) on its own public VPC LB, so the browser
+# login flow can complete from outside. The default IngressController stays PRIVATE.
+#
+# Scoped tightly: namespaceSelector + routeSelector target only the single oauth-openshift
+# route — nothing else can be admitted by this shard. Reversible: delete this IC to remove the LB.
+apiVersion: operator.openshift.io/v1
+kind: IngressController
+metadata:
+  name: oauth-public
+  namespace: openshift-ingress-operator
+spec:
+  domain: oauth-public.oc-nm-upstream-wdc.washington.nmopenshift.com
+  replicas: 2
+  endpointPublishingStrategy:
+    type: LoadBalancerService
+    loadBalancer:
+      scope: External
+  namespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: openshift-authentication
+  routeSelector:
+    matchLabels:
+      app: oauth-openshift

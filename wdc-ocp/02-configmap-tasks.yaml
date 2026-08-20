@@ -1,0 +1,9 @@
+# Task definitions injected into the agentd-ui pod at /tasks/.
+# Each key becomes a file; the UI lists and dispatches them as CronJob runs.
+# Add task YAML files here following the agentd task schema.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agentd-tasks
+  namespace: agentd
+data: {}

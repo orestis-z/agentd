@@ -1,0 +1,14 @@
+# Shared RWX volume for queue, schedules, and logs — mounted by both the UI and orchestrator.
+# Subdirs: /data/queue (task YAMLs), /data/schedules, /data/logs (run JSONL files).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agentd-shared
+  namespace: agentd
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ocs-storagecluster-cephfs
+  resources:
+    requests:
+      storage: 20Gi

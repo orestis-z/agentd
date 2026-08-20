@@ -35,8 +35,7 @@ def _user() -> str:
 
 
 def _instance_name(task_name: str) -> str:
-    slug = task_name.lower().replace(" ", "-").replace("_", "-")
-    return f"agentd-{slug}"
+    return task_name.lower().replace(" ", "-").replace("_", "-")
 
 
 def pod_name(task_name: str) -> str:
@@ -115,6 +114,8 @@ def provision_pod(task_name: str, gpus: int, gpu_type: str, devenv_dir: Path):
         ],
         stdin=subprocess.DEVNULL,
     )
+    # launch.sh exits non-zero when tmux attach fails (expected: stdin is /dev/null).
+    # The oc wait below is the real readiness check.
     _run_cmd([
         "oc", "wait", "--for=condition=Ready",
         f"pod/{pod_name(task_name)}", "-n", NAMESPACE, "--timeout=1800s",
@@ -269,11 +270,18 @@ def teardown_pod(task_name: str, devenv_dir: Path):
     pvc = f"devenv-workspace-{_user()}-{instance}"
     try:
         subprocess.run(
-            ["oc", "delete", "pvc", pvc, "-n", NAMESPACE, "--wait=false"],
-            timeout=60,
+            ["oc", "delete", "pvc", pvc, "-n", NAMESPACE],
+            timeout=120,
         )
     except Exception:
-        pass
+        try:
+            subprocess.run(
+                ["oc", "patch", "pvc", pvc, "-n", NAMESPACE,
+                 "-p", '{"metadata":{"finalizers":null}}'],
+                timeout=30,
+            )
+        except Exception:
+            pass
 
 
 def check_schedules(schedule_dir: Path, queue_dir: Path):

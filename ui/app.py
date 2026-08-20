@@ -670,5 +670,5 @@ def schedule_delete(filename):
 
 if __name__ == "__main__":
     os.makedirs(LOG_DIR, exist_ok=True)
-    port = int(os.environ.get("AGENTD_UI_PORT", "5000"))
+    port = int(os.environ.get("AGENTD_LISTEN_PORT", "5000"))
     app.run(host="0.0.0.0", port=port, debug=os.environ.get("FLASK_DEBUG", "0") == "1")
