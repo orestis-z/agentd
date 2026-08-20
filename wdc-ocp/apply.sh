@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-# Deploy agentd-ui. Idempotent — safe to re-run.
+# Deploy agentd. Idempotent — safe to re-run.
+# Cluster-admin resources (namespace, ClusterRoleBindings, IngressController, TLS cert)
+# are applied by bootstrap-admin.sh. This script handles everything else.
 set -euo pipefail
 cd "$(dirname "$0")"
 NS=agentd
 HOST=agentd.apps.oc-nm-upstream-wdc.washington.nmopenshift.com
-
-echo "==> namespace + rbac"
-oc apply -f 00-namespace.yaml
-oc apply -f 01-rbac.yaml
 
 echo "==> ghcr.io pull secret"
 if [ -z "${GHCR_TOKEN:-}" ]; then
@@ -21,14 +19,6 @@ else
   oc secrets link agentd-ui ghcr-pull-secret --for=pull -n "$NS"
 fi
 
-echo "==> wildcard *.apps TLS for oauth-proxy (copied from openshift-ingress/router-certs-default)"
-oc get secret router-certs-default -n openshift-ingress -o jsonpath='{.data.tls\.crt}' | base64 -d > /tmp/agentd-ui-wild.crt
-oc get secret router-certs-default -n openshift-ingress -o jsonpath='{.data.tls\.key}' | base64 -d > /tmp/agentd-ui-wild.key
-oc create secret tls agentd-ui-wildcard-tls -n "$NS" \
-  --cert=/tmp/agentd-ui-wild.crt --key=/tmp/agentd-ui-wild.key \
-  --dry-run=client -o yaml | oc apply -f -
-rm -f /tmp/agentd-ui-wild.crt /tmp/agentd-ui-wild.key
-
 echo "==> cookie secret (oauth-proxy session)"
 oc create secret generic agentd-ui-cookie -n "$NS" \
   --from-literal=session_secret="$(openssl rand -hex 16)" \
@@ -39,9 +29,6 @@ oc apply -f 02-configmap-tasks.yaml
 
 echo "==> shared PVC (queue + logs + schedules)"
 oc apply -f 05-shared-pvc.yaml
-
-echo "==> orchestrator RBAC"
-oc apply -f 06-orchestrator-rbac.yaml
 
 echo "==> devenv scripts ConfigMap"
 DEVENV_DIR="${DEVENV_DIR:-$(cd "$(dirname "$0")/../.." && pwd)/devenv}"
@@ -68,9 +55,6 @@ oc rollout status deploy/agentd-ui -n "$NS" --timeout=180s || true
 
 echo "==> public LoadBalancer service"
 oc apply -f 04-service.yaml
-
-echo "==> oauth-public IngressController (exposes cluster OAuth server externally)"
-oc apply -f 08-oauth-public-ingresscontroller.yaml
 
 echo "==> waiting for the VPC LoadBalancer to get an ingress address..."
 for i in $(seq 1 60); do
