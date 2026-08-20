@@ -1,5 +1,4 @@
-# Dedicated PUBLIC IBM Cloud VPC LoadBalancer for agentd-ui -> oauth-proxy :8443.
-# L4 passthrough: oauth-proxy terminates TLS with the wildcard *.apps cert.
+# ClusterIP service for agentd-ui; exposed externally via the passthrough Route below.
 apiVersion: v1
 kind: Service
 metadata:
@@ -8,10 +7,27 @@ metadata:
   labels:
     app: agentd-ui
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: agentd-ui
   ports:
     - name: https
-      port: 443
+      port: 8443
       targetPort: 8443
+---
+# Passthrough Route: the default *.apps ingress router forwards TLS traffic
+# directly to oauth-proxy, which terminates TLS with the wildcard cert.
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: agentd-ui
+  namespace: agentd
+spec:
+  host: agentd.apps.oc-nm-upstream-wdc.washington.nmopenshift.com
+  to:
+    kind: Service
+    name: agentd-ui
+  port:
+    targetPort: 8443
+  tls:
+    termination: passthrough

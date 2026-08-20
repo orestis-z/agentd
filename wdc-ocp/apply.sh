@@ -53,21 +53,7 @@ oc rollout status deploy/agentd-orchestrator -n "$NS" --timeout=300s || true
 oc rollout restart deploy/agentd-ui -n "$NS" >/dev/null 2>&1 || true
 oc rollout status deploy/agentd-ui -n "$NS" --timeout=180s || true
 
-echo "==> public LoadBalancer service"
+echo "==> service + passthrough route"
 oc apply -f 04-service.yaml
 
-echo "==> waiting for the VPC LoadBalancer to get an ingress address..."
-for i in $(seq 1 60); do
-  LB=$(oc get svc agentd-ui -n "$NS" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
-  [ -n "$LB" ] && break
-  sleep 10
-done
-
-echo
-if [ -n "${LB:-}" ]; then
-  echo "==> LoadBalancer address: $LB"
-  echo "==> NEXT: create public DNS record  $HOST  ->  $LB  (CNAME if hostname, A if IP)"
-else
-  echo "==> LB address not ready yet; re-check with:  oc get svc agentd-ui -n $NS -w"
-fi
-echo "==> done. URL (after DNS): https://$HOST"
+echo "==> done. URL: https://$HOST"
