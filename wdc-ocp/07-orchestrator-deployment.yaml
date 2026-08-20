@@ -50,7 +50,7 @@ spec:
                 --devenv-dir /devenv \
                 --log-dir /data/logs \
                 --schedule-dir /data/schedules \
-                --poll-interval 30 \
+                --poll-interval 1 \
                 --namespace machine-learning
           env:
             - { name: USER, value: agentd }
