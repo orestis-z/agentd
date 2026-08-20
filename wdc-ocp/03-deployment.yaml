@@ -23,6 +23,15 @@ spec:
       securityContext:
         runAsUser: 1000
         runAsGroup: 0
+        fsGroup: 0
+      initContainers:
+        - name: init-dirs
+          image: busybox:latest
+          command: ["sh", "-c", "mkdir -p /data/logs /data/queue /data/schedules"]
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - { name: data, mountPath: /data }
       containers:
         - name: oauth-proxy
           image: registry.redhat.io/openshift4/ose-oauth-proxy-rhel9@sha256:c7079c7e8625aade224165d627e5d0714ec1c1471a6377b4941e4a042b19efaa
