@@ -57,22 +57,23 @@ def _create_k8s_secret(name: str, value: str, created_by: str) -> tuple[bool, st
         result = subprocess.run(
             ["oc", "create", "secret", "generic", name,
              "-n", AGENTD_NAMESPACE,
-             f"--from-literal=value={value}",
-             "--dry-run=client", "-o", "yaml"],
+             f"--from-literal=value={value}"],
             capture_output=True, text=True, timeout=30,
         )
         if result.returncode != 0:
-            return False, f"dry-run: {result.stderr.strip() or result.stdout.strip()}"
-        manifest = yaml.safe_load(result.stdout)
-        manifest.setdefault("metadata", {}).setdefault("labels", {})["app.kubernetes.io/managed-by"] = "agentd"
-        manifest["metadata"].setdefault("annotations", {})["agentd/created-by"] = created_by
-        manifest_yaml = yaml.dump(manifest)
-        apply_result = subprocess.run(
-            ["oc", "apply", "-f", "-", "-n", AGENTD_NAMESPACE],
-            input=manifest_yaml, capture_output=True, text=True, timeout=30,
+            err = result.stderr.strip() or result.stdout.strip()
+            if "already exists" not in err:
+                return False, err
+        subprocess.run(
+            ["oc", "label", "secret", name, "-n", AGENTD_NAMESPACE,
+             "app.kubernetes.io/managed-by=agentd", "--overwrite"],
+            capture_output=True, text=True, timeout=30,
         )
-        if apply_result.returncode != 0:
-            return False, f"apply: {apply_result.stderr.strip() or apply_result.stdout.strip()}"
+        subprocess.run(
+            ["oc", "annotate", "secret", name, "-n", AGENTD_NAMESPACE,
+             f"agentd/created-by={created_by}", "--overwrite"],
+            capture_output=True, text=True, timeout=30,
+        )
         return True, ""
     except Exception as e:
         return False, f"{type(e).__name__}: {e}"
