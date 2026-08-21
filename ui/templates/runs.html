@@ -58,9 +58,6 @@
                 </select>
             </div>
         </div>
-        <details class="form-advanced">
-            <summary>Advanced</summary>
-
             <details class="form-section" open>
                 <summary>Limits</summary>
                 <div class="form-row-group">
@@ -180,7 +177,6 @@
                     </label>
                 </div>
             </details>
-        </details>
         <button type="submit" id="submit-btn">Queue</button>
     </form>
 </section>
@@ -356,7 +352,7 @@ document.getElementById('f-skill').addEventListener('input', function() {
 if (window._duplicateConfig) {
     fillForm(window._duplicateConfig);
     document.querySelector('.launch-form').scrollIntoView({behavior: 'smooth'});
-    document.querySelector('.form-advanced').open = true;
+    document.querySelectorAll('.form-section').forEach(function(d) { d.open = true; });
 }
 </script>
 {% endblock %}
