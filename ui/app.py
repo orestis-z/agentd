@@ -436,6 +436,14 @@ def launch():
     if anthropic_api_key_secret:
         task_data["anthropic_api_key_secret"] = anthropic_api_key_secret
 
+    anthropic_auth_token_secret = request.form.get("anthropic_auth_token_secret", "").strip()
+    if anthropic_auth_token_secret:
+        task_data["anthropic_auth_token_secret"] = anthropic_auth_token_secret
+
+    ca_cert_secret = request.form.get("ca_cert_secret", "").strip()
+    if ca_cert_secret:
+        task_data["ca_cert_secret"] = ca_cert_secret
+
     notify_on = []
     if request.form.get("notify_on_success"):
         notify_on.append("success")

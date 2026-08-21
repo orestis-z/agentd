@@ -126,6 +126,26 @@
                 <span class="muted">K8s secret for custom Anthropic endpoint API key</span>
             </div>
             <div class="form-row">
+                <label>Anthropic auth token secret</label>
+                <select name="anthropic_auth_token_secret" id="f-anthropic_auth_token_secret">
+                    <option value="">None</option>
+                    {% for s in secrets %}
+                    <option value="{{ s.name }}">{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+                <span class="muted">K8s secret for ANTHROPIC_AUTH_TOKEN</span>
+            </div>
+            <div class="form-row">
+                <label>CA certificate secret</label>
+                <select name="ca_cert_secret" id="f-ca_cert_secret">
+                    <option value="">None</option>
+                    {% for s in secrets %}
+                    <option value="{{ s.name }}">{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+                <span class="muted">K8s secret containing PEM certificate — installed as trusted CA in the pod</span>
+            </div>
+            <div class="form-row">
                 <label>Slack webhook secret</label>
                 <select name="slack_webhook_secret" id="f-slack_webhook_secret">
                     <option value="">Default (agentd-slack-webhook)</option>
@@ -281,6 +301,8 @@ function fillForm(d) {
     document.getElementById('f-github_token_secret').value = d.github_token_secret || '';
     document.getElementById('f-anthropic_base_url').value = d.anthropic_base_url || '';
     document.getElementById('f-anthropic_api_key_secret').value = d.anthropic_api_key_secret || '';
+    document.getElementById('f-anthropic_auth_token_secret').value = d.anthropic_auth_token_secret || '';
+    document.getElementById('f-ca_cert_secret').value = d.ca_cert_secret || '';
     document.getElementById('f-slack_webhook_secret').value = (d.notify && d.notify.slack_webhook_secret) || '';
     var notifyOn = (d.notify && d.notify.on) || ['failure'];
     document.getElementById('f-notify_on_success').checked = notifyOn.indexOf('success') !== -1;

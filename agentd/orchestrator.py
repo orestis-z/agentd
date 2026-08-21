@@ -149,9 +149,20 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
     if task.git_email:
         git_config += f"git config --global user.email '{task.git_email}' && "
 
+    ca_cert_install = ""
+    if task.ca_cert_secret:
+        cert_pem = _read_k8s_secret(task.ca_cert_secret)
+        if cert_pem:
+            import shlex
+            ca_cert_install = (
+                f"printf %s {shlex.quote(cert_pem)} > /usr/local/share/ca-certificates/agentd-custom-ca.crt && "
+                "update-ca-certificates && "
+            )
+
     setup_script = (
         "set -ex && "
         f"mkdir -p {remote_task_dir} /tmp/agentd-logs && chmod 1777 /tmp/agentd-logs && "
+        f"{ca_cert_install}"
         "pip install git+https://github.com/orestis-z/agentd.git && "
         "WS_GID=$(stat -c '%g' /workspace 2>/dev/null || echo 0) && "
         "{ getent group $WS_GID &>/dev/null || groupadd -g $WS_GID workspace; } && "
@@ -230,6 +241,10 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
             env_exports += f"export CLOUD_ML_REGION='{region}' && "
         if project_id:
             env_exports += f"export ANTHROPIC_VERTEX_PROJECT_ID='{project_id}' && "
+    if task.anthropic_auth_token_secret:
+        auth_token = _read_k8s_secret(task.anthropic_auth_token_secret)
+        if auth_token:
+            env_exports += f"export ANTHROPIC_AUTH_TOKEN='{auth_token}' && "
     if task.github_token_secret:
         token = _read_k8s_secret(task.github_token_secret)
         if token:

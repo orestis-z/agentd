@@ -37,6 +37,8 @@ class TaskConfig:
     github_token_secret: str | None = None
     anthropic_base_url: str | None = None
     anthropic_api_key_secret: str | None = None
+    anthropic_auth_token_secret: str | None = None
+    ca_cert_secret: str | None = None
     vertex_project_id: str | None = None
     cloud_ml_region: str | None = None
     pre_run: str | None = None
@@ -131,6 +133,8 @@ def load_task(path: str | Path) -> TaskConfig:
         github_token_secret=data.get("github_token_secret"),
         anthropic_base_url=data.get("anthropic_base_url"),
         anthropic_api_key_secret=data.get("anthropic_api_key_secret"),
+        anthropic_auth_token_secret=data.get("anthropic_auth_token_secret"),
+        ca_cert_secret=data.get("ca_cert_secret"),
         vertex_project_id=data.get("vertex_project_id"),
         cloud_ml_region=data.get("cloud_ml_region"),
         pre_run=data.get("pre_run"),
