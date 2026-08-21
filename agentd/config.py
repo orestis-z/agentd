@@ -15,7 +15,7 @@ DEFAULT_SLACK_WEBHOOK_SECRET = "agentd-slack-webhook"
 
 @dataclass
 class NotifyConfig:
-    on: list[str] = field(default_factory=lambda: ["failure"])
+    on: list[str] = field(default_factory=lambda: ["success", "failure"])
     slack_webhook_secret: str = DEFAULT_SLACK_WEBHOOK_SECRET
 
 
