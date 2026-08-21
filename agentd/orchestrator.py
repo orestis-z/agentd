@@ -15,7 +15,9 @@ import shutil
 import signal
 import subprocess
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, Future
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -411,18 +413,21 @@ def cleanup_stale_pods():
 
 def process_task(
     task_path: Path,
+    task: "TaskConfig",
     devenv_dir: Path,
     log_dir: Path,
     completed_dir: Path,
     failed_dir: Path,
 ):
-    task = load_task(task_path)
     gpus = task.gpus if task.gpus is not None else 1
     gpu_type = task.gpu_type or DEFAULT_GPU_TYPE
     timeout = task.timeout if task.timeout is not None else DEFAULT_TIMEOUT
 
     timeout_str = f"{timeout}s" if timeout else "none"
     print(f"\n=== Task: {task.name} | {gpus}x {gpu_type} | timeout {timeout_str} ===")
+
+    with _active_lock:
+        _active_tasks[task_path.name] = task.name
 
     running_marker = task_path.parent / f".running-{task_path.name}"
     try:
@@ -441,6 +446,8 @@ def process_task(
         failed_dir.mkdir(parents=True, exist_ok=True)
         shutil.move(str(task_path), str(failed_dir / task_path.name))
     finally:
+        with _active_lock:
+            _active_tasks.pop(task_path.name, None)
         copy_logs_out(task.name, log_dir)
         running_marker.unlink(missing_ok=True)
         resolved = task_path.parent / f".resolved-{task_path.name}"
@@ -448,7 +455,8 @@ def process_task(
         teardown_pod(task.name, devenv_dir)
 
 
-_current_task: str | None = None
+_active_tasks: dict[str, str] = {}  # task_path.name -> task.name
+_active_lock = threading.Lock()
 _devenv_dir: Path | None = None
 
 
@@ -456,8 +464,11 @@ def _register_signal_handlers():
     def _handler(signum, _frame):
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
-        if _current_task and _devenv_dir:
-            teardown_pod(_current_task, _devenv_dir)
+        if _devenv_dir:
+            with _active_lock:
+                tasks = list(_active_tasks.values())
+            for task_name in tasks:
+                teardown_pod(task_name, _devenv_dir)
         sys.exit(128 + signum)
 
     signal.signal(signal.SIGTERM, _handler)
@@ -470,8 +481,9 @@ def watch_queue(
     log_dir: Path,
     poll_interval: int = 30,
     schedule_dir: Path | None = None,
+    max_parallel: int = 8,
 ):
-    global _current_task, _devenv_dir
+    global _devenv_dir
     _devenv_dir = devenv_dir
 
     completed_dir = queue_dir.parent / "completed"
@@ -480,34 +492,50 @@ def watch_queue(
     _register_signal_handlers()
     cleanup_stale_pods()
 
-    print(f"=== Orchestrator watching {queue_dir} (poll every {poll_interval}s) ===")
+    print(f"=== Orchestrator watching {queue_dir} (poll every {poll_interval}s, max parallel {max_parallel}) ===")
     if schedule_dir:
         print(f"=== Checking schedules in {schedule_dir} ===")
 
-    while True:
-        if schedule_dir and schedule_dir.is_dir():
-            check_schedules(schedule_dir, queue_dir)
+    futures: dict[str, Future] = {}
 
-        tasks = sorted(
-            (p for p in queue_dir.glob("*.yml") if not p.name.startswith(".")),
-            key=lambda p: p.stat().st_mtime,
-        )
-        if not tasks:
+    with ThreadPoolExecutor(max_workers=max_parallel) as pool:
+        while True:
+            done = [k for k, f in futures.items() if f.done()]
+            for k in done:
+                exc = futures[k].exception()
+                if exc:
+                    print(f"ERROR: task thread {k} raised: {exc}")
+                del futures[k]
+
+            if schedule_dir and schedule_dir.is_dir():
+                check_schedules(schedule_dir, queue_dir)
+
+            tasks = sorted(
+                (p for p in queue_dir.glob("*.yml") if not p.name.startswith(".")),
+                key=lambda p: p.stat().st_mtime,
+            )
+
+            for task_path in tasks:
+                if len(futures) >= max_parallel:
+                    break
+                if task_path.name in futures:
+                    continue
+
+                try:
+                    task = load_task(task_path)
+                except Exception as e:
+                    print(f"ERROR: invalid task {task_path}: {e}")
+                    failed_dir.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(task_path), str(failed_dir / task_path.name))
+                    continue
+
+                future = pool.submit(
+                    process_task, task_path, task, devenv_dir, log_dir,
+                    completed_dir, failed_dir,
+                )
+                futures[task_path.name] = future
+
             time.sleep(poll_interval)
-            continue
-
-        task_path = tasks[0]
-        try:
-            task = load_task(task_path)
-            _current_task = task.name
-        except Exception as e:
-            print(f"ERROR: invalid task {task_path}: {e}")
-            failed_dir.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(task_path), str(failed_dir / task_path.name))
-            continue
-
-        process_task(task_path, devenv_dir, log_dir, completed_dir, failed_dir)
-        _current_task = None
 
 
 def main():
@@ -538,6 +566,10 @@ def main():
         help="Seconds between queue polls (default: 30)",
     )
     parser.add_argument(
+        "--max-parallel", type=int, default=8,
+        help="Maximum concurrent tasks (default: 8)",
+    )
+    parser.add_argument(
         "--namespace", default=NAMESPACE,
         help=f"OpenShift namespace (default: {NAMESPACE})",
     )
@@ -557,6 +589,7 @@ def main():
     watch_queue(
         args.queue, args.devenv_dir, args.log_dir, args.poll_interval,
         schedule_dir=args.schedule_dir,
+        max_parallel=args.max_parallel,
     )
 
 

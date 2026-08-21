@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
+from agentd.config import load_task
 from agentd.orchestrator import _instance_name, _user, pod_name
 
 
@@ -33,12 +34,13 @@ def test_process_task_moves_to_completed(tmp_path):
     task_yaml = queue_dir / "test-task.yml"
     task_yaml.write_text("name: test\nprompt: do something\ngpus: 1\n")
 
+    task = load_task(task_yaml)
     with patch("agentd.orchestrator.provision_pod"), \
          patch("agentd.orchestrator.run_task_in_pod", return_value=0), \
          patch("agentd.orchestrator.copy_logs_out"), \
          patch("agentd.orchestrator.teardown_pod"):
         from agentd.orchestrator import process_task
-        process_task(task_yaml, Path("/fake/devenv"), log_dir, completed_dir, failed_dir)
+        process_task(task_yaml, task, Path("/fake/devenv"), log_dir, completed_dir, failed_dir)
 
     assert not task_yaml.exists()
     assert (completed_dir / "test-task.yml").exists()
@@ -54,12 +56,13 @@ def test_process_task_moves_to_failed(tmp_path):
     task_yaml = queue_dir / "test-task.yml"
     task_yaml.write_text("name: test\nprompt: do something\ngpus: 1\n")
 
+    task = load_task(task_yaml)
     with patch("agentd.orchestrator.provision_pod"), \
          patch("agentd.orchestrator.run_task_in_pod", return_value=1), \
          patch("agentd.orchestrator.copy_logs_out"), \
          patch("agentd.orchestrator.teardown_pod"):
         from agentd.orchestrator import process_task
-        process_task(task_yaml, Path("/fake/devenv"), log_dir, completed_dir, failed_dir)
+        process_task(task_yaml, task, Path("/fake/devenv"), log_dir, completed_dir, failed_dir)
 
     assert not task_yaml.exists()
     assert (failed_dir / "test-task.yml").exists()
@@ -75,11 +78,12 @@ def test_process_task_moves_to_failed_on_exception(tmp_path):
     task_yaml = queue_dir / "test-task.yml"
     task_yaml.write_text("name: test\nprompt: do something\ngpus: 1\n")
 
+    task = load_task(task_yaml)
     with patch("agentd.orchestrator.provision_pod", side_effect=RuntimeError("pod failed")), \
          patch("agentd.orchestrator.copy_logs_out"), \
          patch("agentd.orchestrator.teardown_pod"):
         from agentd.orchestrator import process_task
-        process_task(task_yaml, Path("/fake/devenv"), log_dir, completed_dir, failed_dir)
+        process_task(task_yaml, task, Path("/fake/devenv"), log_dir, completed_dir, failed_dir)
 
     assert not task_yaml.exists()
     assert (failed_dir / "test-task.yml").exists()
