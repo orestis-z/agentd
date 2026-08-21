@@ -25,7 +25,7 @@
         <div class="form-row">
             <label>Skill</label>
             <input type="text" name="skill" id="f-skill" placeholder="pr-review, /path/to/SKILL.md, or https://github.com/.../SKILL.md">
-            <span class="muted">Name, local path, or URL — resolved and injected as system prompt</span>
+            <span class="hint">Name, local path, or URL — resolved and injected as system prompt</span>
         </div>
         <div class="form-row" id="skill-args-row" style="display:none">
             <label>Skill Arguments</label>
@@ -34,7 +34,7 @@
         <div class="form-row">
             <label>Schedule</label>
             <input type="text" name="schedule" id="f-schedule" placeholder="e.g. 0 9 * * * (daily at 9am UTC)">
-            <span class="muted">Cron expression — leave empty for one-shot</span>
+            <span class="hint">Cron expression — leave empty for one-shot</span>
         </div>
         <div class="form-row-group">
             <div class="form-row">
@@ -108,12 +108,12 @@
                     <option value="{{ s.name }}">{{ s.name }}</option>
                     {% endfor %}
                 </select>
-                <span class="muted">GITHUB_TOKEN — K8s secret containing a GitHub PAT</span>
+                <span class="hint">Sets GITHUB_TOKEN — GitHub personal access token</span>
             </div>
             <div class="form-row">
                 <label>Anthropic base URL</label>
                 <input type="text" name="anthropic_base_url" id="f-anthropic_base_url" placeholder="http://vllm-svc:8000">
-                <span class="muted">Custom endpoint (e.g. vLLM) — overrides Vertex AI</span>
+                <span class="hint">Sets ANTHROPIC_BASE_URL — custom endpoint (e.g. vLLM), overrides Vertex AI</span>
             </div>
             <div class="form-row">
                 <label>Anthropic API key secret</label>
@@ -123,7 +123,7 @@
                     <option value="{{ s.name }}">{{ s.name }}</option>
                     {% endfor %}
                 </select>
-                <span class="muted">ANTHROPIC_API_KEY — K8s secret for custom Anthropic endpoint API key</span>
+                <span class="hint">Sets ANTHROPIC_API_KEY — API key for the custom endpoint</span>
             </div>
             <div class="form-row">
                 <label>Anthropic auth token secret</label>
@@ -133,7 +133,7 @@
                     <option value="{{ s.name }}">{{ s.name }}</option>
                     {% endfor %}
                 </select>
-                <span class="muted">K8s secret for ANTHROPIC_AUTH_TOKEN</span>
+                <span class="hint">Sets ANTHROPIC_AUTH_TOKEN — auth token for the custom endpoint</span>
             </div>
             <div class="form-row">
                 <label>CA certificate secret</label>
@@ -143,7 +143,7 @@
                     <option value="{{ s.name }}">{{ s.name }}</option>
                     {% endfor %}
                 </select>
-                <span class="muted">Custom CA certificate (PEM) for ANTHROPIC_BASE_URL endpoints using private TLS</span>
+                <span class="hint">PEM certificate for custom endpoints using private TLS</span>
             </div>
             <div class="form-row">
                 <label>Slack webhook secret</label>
@@ -153,7 +153,7 @@
                     <option value="{{ s.name }}">{{ s.name }}</option>
                     {% endfor %}
                 </select>
-                <span class="muted">K8s secret containing Slack webhook URL — <a href="https://api.slack.com/apps" target="_blank">create one here</a></span>
+                <span class="hint">Slack incoming webhook URL — <a href="https://api.slack.com/apps" target="_blank">create one here</a></span>
             </div>
             <div class="form-row">
                 <label>Notify on</label>

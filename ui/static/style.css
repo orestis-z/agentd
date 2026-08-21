@@ -101,7 +101,8 @@ select, input[type="text"], input[type="number"], input[type="password"], textar
 textarea { width: 100%; resize: vertical; }
 
 .form-row { margin-bottom: 10px; }
-.form-row label { display: block; color: #8b949e; font-size: 13px; margin-bottom: 2px; }
+.form-row label { display: block; color: #8b949e; font-size: 14px; margin-bottom: 2px; }
+.form-row .hint { display: block; color: #6e7681; font-size: 12px; margin-top: 3px; }
 .form-row input[type="text"],
 .form-row input[type="number"],
 .form-row input[type="password"],
