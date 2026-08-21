@@ -52,7 +52,7 @@ def _list_k8s_secrets() -> list[dict]:
         return []
 
 
-def _create_k8s_secret(name: str, value: str, created_by: str) -> bool:
+def _create_k8s_secret(name: str, value: str, created_by: str) -> tuple[bool, str]:
     try:
         result = subprocess.run(
             ["oc", "create", "secret", "generic", name,
@@ -62,7 +62,7 @@ def _create_k8s_secret(name: str, value: str, created_by: str) -> bool:
             capture_output=True, text=True, timeout=30,
         )
         if result.returncode != 0:
-            return False
+            return False, result.stderr.strip()
         manifest = yaml.safe_load(result.stdout)
         manifest.setdefault("metadata", {}).setdefault("labels", {})["app.kubernetes.io/managed-by"] = "agentd"
         manifest["metadata"].setdefault("annotations", {})["agentd/created-by"] = created_by
@@ -70,9 +70,11 @@ def _create_k8s_secret(name: str, value: str, created_by: str) -> bool:
             ["oc", "apply", "-f", "-", "-n", AGENTD_NAMESPACE],
             input=yaml.dump(manifest), capture_output=True, text=True, timeout=30,
         )
-        return apply_result.returncode == 0
-    except Exception:
-        return False
+        if apply_result.returncode != 0:
+            return False, apply_result.stderr.strip()
+        return True, ""
+    except Exception as e:
+        return False, str(e)
 
 
 def _delete_k8s_secret(name: str) -> bool:
@@ -779,10 +781,11 @@ def secrets_create():
         flash("Name and value are required.", "error")
         return redirect(url_for("secrets"))
     user = _current_user()
-    if _create_k8s_secret(name, value, user):
+    ok, err = _create_k8s_secret(name, value, user)
+    if ok:
         flash(f"Secret '{name}' created.", "success")
     else:
-        flash(f"Failed to create secret '{name}'.", "error")
+        flash(f"Failed to create secret '{name}': {err}", "error")
     return redirect(url_for("secrets"))
 
 
