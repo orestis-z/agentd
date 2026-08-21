@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 from pathlib import Path
-from agentd.config import load_task, resolve_skill, _github_blob_to_raw, NotifyConfig
+from agentd.config import load_task, resolve_skill, _github_blob_to_raw, NotifyConfig, DEFAULT_SLACK_WEBHOOK_SECRET
 
 
 def _write_yaml(tmp_path: Path, content: str) -> Path:
@@ -46,11 +46,24 @@ def test_load_notify_default_on(tmp_path):
 name: notified
 prompt: do something
 notify:
-  slack_webhook_env: MY_WEBHOOK
+  slack_webhook_secret: my-webhook
 """)
     task = load_task(p)
     assert task.notify is not None
-    assert task.notify.slack_webhook_env == "MY_WEBHOOK"
+    assert task.notify.slack_webhook_secret == "my-webhook"
+    assert task.notify.on == ["failure"]
+
+
+def test_load_notify_default_webhook_secret(tmp_path):
+    p = _write_yaml(tmp_path, """
+name: notified
+prompt: do something
+notify:
+  on: [failure]
+""")
+    task = load_task(p)
+    assert task.notify is not None
+    assert task.notify.slack_webhook_secret == DEFAULT_SLACK_WEBHOOK_SECRET
     assert task.notify.on == ["failure"]
 
 
@@ -59,7 +72,7 @@ def test_load_notify_custom_on(tmp_path):
 name: notified
 prompt: do something
 notify:
-  slack_webhook_env: MY_WEBHOOK
+  slack_webhook_secret: my-webhook
   on: [success, failure]
 """)
     task = load_task(p)
@@ -71,21 +84,9 @@ def test_load_notify_invalid_on(tmp_path):
 name: bad
 prompt: do something
 notify:
-  slack_webhook_env: MY_WEBHOOK
   on: [success, crash]
 """)
     with pytest.raises(ValueError, match="invalid notify.on"):
-        load_task(p)
-
-
-def test_load_notify_missing_webhook(tmp_path):
-    p = _write_yaml(tmp_path, """
-name: bad
-prompt: do something
-notify:
-  on: [failure]
-""")
-    with pytest.raises(ValueError, match="slack_webhook_env"):
         load_task(p)
 
 

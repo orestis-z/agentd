@@ -10,12 +10,13 @@ import yaml
 
 
 VALID_NOTIFY_EVENTS = {"success", "failure"}
+DEFAULT_SLACK_WEBHOOK_SECRET = "agentd-slack-webhook"
 
 
 @dataclass
 class NotifyConfig:
-    slack_webhook_env: str
     on: list[str] = field(default_factory=lambda: ["failure"])
+    slack_webhook_secret: str = DEFAULT_SLACK_WEBHOOK_SECRET
 
 
 @dataclass
@@ -33,9 +34,9 @@ class TaskConfig:
     notify: NotifyConfig | None = None
     git_name: str | None = None
     git_email: str | None = None
-    github_token_env: str | None = None
+    github_token_secret: str | None = None
     anthropic_base_url: str | None = None
-    anthropic_api_key_env: str | None = None
+    anthropic_api_key_secret: str | None = None
     vertex_project_id: str | None = None
     cloud_ml_region: str | None = None
     pre_run: str | None = None
@@ -43,6 +44,7 @@ class TaskConfig:
     gpu_type: str | None = None
     timeout: int | None = None
     schedule: str | None = None
+    dispatched_by: str | None = None
 
 
 def _github_blob_to_raw(url: str) -> str:
@@ -86,14 +88,17 @@ def load_task(path: str | Path) -> TaskConfig:
     notify = None
     if "notify" in data:
         n = data["notify"]
-        if not isinstance(n, dict) or "slack_webhook_env" not in n:
-            raise ValueError(f"{path}: notify requires 'slack_webhook_env'")
+        if not isinstance(n, dict):
+            raise ValueError(f"{path}: notify must be a mapping")
         # YAML parses bare `on:` as boolean True — handle both keys
         on = n.get("on", n.get(True, ["failure"]))
         invalid = set(on) - VALID_NOTIFY_EVENTS
         if invalid:
             raise ValueError(f"{path}: invalid notify.on values: {invalid}")
-        notify = NotifyConfig(slack_webhook_env=n["slack_webhook_env"], on=on)
+        notify = NotifyConfig(
+            on=on,
+            slack_webhook_secret=n.get("slack_webhook_secret", DEFAULT_SLACK_WEBHOOK_SECRET),
+        )
 
     skill_ref = data.get("skill")
     skill_args = data.get("skill_args")
@@ -123,9 +128,9 @@ def load_task(path: str | Path) -> TaskConfig:
         notify=notify,
         git_name=data.get("git_name"),
         git_email=data.get("git_email"),
-        github_token_env=data.get("github_token_env"),
+        github_token_secret=data.get("github_token_secret"),
         anthropic_base_url=data.get("anthropic_base_url"),
-        anthropic_api_key_env=data.get("anthropic_api_key_env"),
+        anthropic_api_key_secret=data.get("anthropic_api_key_secret"),
         vertex_project_id=data.get("vertex_project_id"),
         cloud_ml_region=data.get("cloud_ml_region"),
         pre_run=data.get("pre_run"),
@@ -133,4 +138,5 @@ def load_task(path: str | Path) -> TaskConfig:
         gpu_type=data.get("gpu_type"),
         timeout=data.get("timeout"),
         schedule=data.get("schedule"),
+        dispatched_by=data.get("dispatched_by"),
     )

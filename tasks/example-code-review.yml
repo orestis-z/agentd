@@ -11,5 +11,5 @@ max_turns: 20
 max_budget_usd: 2.0
 cwd: /workspace/speculators
 # notify:
-#   slack_webhook_env: SLACK_WEBHOOK_URL
 #   on: [failure]
+#   slack_webhook_secret: agentd-slack-webhook

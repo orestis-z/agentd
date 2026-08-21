@@ -56,3 +56,28 @@ subjects:
   - kind: ServiceAccount
     name: agentd-orchestrator
     namespace: agentd
+---
+# Role in agentd namespace: orchestrator reads secrets (API keys, webhooks).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: agentd-orchestrator-secrets
+  namespace: agentd
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: agentd-orchestrator-secrets
+  namespace: agentd
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: agentd-orchestrator-secrets
+subjects:
+  - kind: ServiceAccount
+    name: agentd-orchestrator
+    namespace: agentd

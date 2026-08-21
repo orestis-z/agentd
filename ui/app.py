@@ -20,6 +20,77 @@ LOG_DIR = os.environ.get("AGENTD_LOG_DIR", "./logs")
 TASK_DIR = os.environ.get("AGENTD_TASK_DIR", "./tasks")
 QUEUE_DIR = os.environ.get("AGENTD_QUEUE_DIR", "./queue")
 SCHEDULE_DIR = os.environ.get("AGENTD_SCHEDULE_DIR", "./schedules")
+AGENTD_NAMESPACE = "agentd"
+MANAGED_BY_LABEL = "app.kubernetes.io/managed-by=agentd"
+
+
+def _current_user() -> str:
+    return request.headers.get("X-Forwarded-User", "unknown")
+
+
+def _list_k8s_secrets() -> list[dict]:
+    try:
+        result = subprocess.run(
+            ["oc", "get", "secrets", "-n", AGENTD_NAMESPACE,
+             "-l", MANAGED_BY_LABEL,
+             "-o", "jsonpath={range .items[*]}{.metadata.name}|{.metadata.annotations.agentd/created-by}{'\\n'}{end}"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            return []
+        secrets = []
+        for line in result.stdout.strip().splitlines():
+            if not line:
+                continue
+            parts = line.split("|", 1)
+            secrets.append({
+                "name": parts[0],
+                "created_by": parts[1] if len(parts) > 1 else "",
+            })
+        return secrets
+    except Exception:
+        return []
+
+
+def _create_k8s_secret(name: str, value: str, created_by: str) -> bool:
+    try:
+        result = subprocess.run(
+            ["oc", "create", "secret", "generic", name,
+             "-n", AGENTD_NAMESPACE,
+             f"--from-literal=value={value}",
+             "--dry-run=client", "-o", "yaml"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            return False
+        manifest = yaml.safe_load(result.stdout)
+        manifest.setdefault("metadata", {}).setdefault("labels", {})["app.kubernetes.io/managed-by"] = "agentd"
+        manifest["metadata"].setdefault("annotations", {})["agentd/created-by"] = created_by
+        apply_result = subprocess.run(
+            ["oc", "apply", "-f", "-", "-n", AGENTD_NAMESPACE],
+            input=yaml.dump(manifest), capture_output=True, text=True, timeout=30,
+        )
+        return apply_result.returncode == 0
+    except Exception:
+        return False
+
+
+def _delete_k8s_secret(name: str) -> bool:
+    try:
+        result = subprocess.run(
+            ["oc", "get", "secret", name, "-n", AGENTD_NAMESPACE,
+             "-o", "jsonpath={.metadata.labels.app\\.kubernetes\\.io/managed-by}"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.stdout.strip() != "agentd":
+            return False
+        del_result = subprocess.run(
+            ["oc", "delete", "secret", name, "-n", AGENTD_NAMESPACE],
+            capture_output=True, text=True, timeout=30,
+        )
+        return del_result.returncode == 0
+    except Exception:
+        return False
 
 
 def _format_ts(ts: str) -> str:
@@ -96,6 +167,7 @@ def _list_runs() -> list[dict]:
                 "cost": None,
                 "turns": None,
                 "duration": None,
+                "dispatched_by": data.get("dispatched_by"),
             })
         except Exception:
             pass
@@ -125,6 +197,7 @@ def _list_runs() -> list[dict]:
             "cost": None,
             "turns": None,
             "duration": None,
+            "dispatched_by": data.get("dispatched_by"),
         })
 
     for path in glob.glob(os.path.join(LOG_DIR, "*.jsonl")):
@@ -146,6 +219,7 @@ def _list_runs() -> list[dict]:
             "cost": None,
             "turns": None,
             "duration": None,
+            "dispatched_by": first.get("dispatched_by"),
         }
         if last:
             run["status"] = "failed" if last.get("is_error") else "success"
@@ -259,6 +333,7 @@ def index():
         "runs.html", runs=runs, tasks=_list_tasks(),
         task_names=task_names, schedules=_list_schedules(),
         duplicate_config=duplicate_config,
+        secrets=_list_k8s_secrets(),
     )
 
 
@@ -349,25 +424,33 @@ def launch():
     if git_email:
         task_data["git_email"] = git_email
 
-    github_token_env = request.form.get("github_token_env", "").strip()
-    if github_token_env:
-        task_data["github_token_env"] = github_token_env
+    github_token_secret = request.form.get("github_token_secret", "").strip()
+    if github_token_secret:
+        task_data["github_token_secret"] = github_token_secret
 
     anthropic_base_url = request.form.get("anthropic_base_url", "").strip()
     if anthropic_base_url:
         task_data["anthropic_base_url"] = anthropic_base_url
 
-    slack_webhook_env = request.form.get("slack_webhook_env", "").strip()
-    if slack_webhook_env:
-        notify_on = []
-        if request.form.get("notify_on_success"):
-            notify_on.append("success")
-        if request.form.get("notify_on_failure"):
-            notify_on.append("failure")
-        task_data["notify"] = {
-            "slack_webhook_env": slack_webhook_env,
-            "on": notify_on or ["failure"],
-        }
+    anthropic_api_key_secret = request.form.get("anthropic_api_key_secret", "").strip()
+    if anthropic_api_key_secret:
+        task_data["anthropic_api_key_secret"] = anthropic_api_key_secret
+
+    notify_on = []
+    if request.form.get("notify_on_success"):
+        notify_on.append("success")
+    if request.form.get("notify_on_failure"):
+        notify_on.append("failure")
+    slack_webhook_secret = request.form.get("slack_webhook_secret", "").strip()
+    if notify_on or slack_webhook_secret:
+        notify = {"on": notify_on or ["failure"]}
+        if slack_webhook_secret:
+            notify["slack_webhook_secret"] = slack_webhook_secret
+        task_data["notify"] = notify
+
+    user = _current_user()
+    if user != "unknown":
+        task_data["dispatched_by"] = user
 
     schedule = request.form.get("schedule", "").strip()
 
@@ -426,6 +509,7 @@ def queue_detail(filename):
         "cost": None,
         "turns": None,
         "duration": None,
+        "dispatched_by": data.get("dispatched_by"),
     }
 
     return render_template(
@@ -490,6 +574,7 @@ def run_detail(run_id):
         "cost": result.get("total_cost_usd") if result else None,
         "turns": result.get("num_turns") if result else None,
         "duration": f"{result['duration_ms'] / 60_000:.1f}m" if result and result.get("duration_ms") else None,
+        "dispatched_by": first.get("dispatched_by"),
     }
 
     timeline = []
@@ -594,7 +679,7 @@ def cancel_task(filename):
     slug = task_name.lower().replace(" ", "-").replace("_", "-")
     user = os.environ.get("USER", os.environ.get("LOGNAME", "unknown")).lower()
     namespace = os.environ.get("DEVENV_NAMESPACE", "machine-learning")
-    pod = f"devenv-{user}-agentd-{slug}"
+    pod = f"devenv-{user}-{slug}"
 
     try:
         subprocess.run(
@@ -666,6 +751,40 @@ def schedule_delete(filename):
     else:
         flash("Schedule not found.", "error")
     return redirect(url_for("index"))
+
+
+@app.route("/secrets")
+def secrets():
+    return render_template("secrets.html", secrets=_list_k8s_secrets())
+
+
+@app.route("/api/secrets")
+def api_secrets():
+    return jsonify(_list_k8s_secrets())
+
+
+@app.route("/secrets/create", methods=["POST"])
+def secrets_create():
+    name = request.form.get("name", "").strip()
+    value = request.form.get("value", "").strip()
+    if not name or not value:
+        flash("Name and value are required.", "error")
+        return redirect(url_for("secrets"))
+    user = _current_user()
+    if _create_k8s_secret(name, value, user):
+        flash(f"Secret '{name}' created.", "success")
+    else:
+        flash(f"Failed to create secret '{name}'.", "error")
+    return redirect(url_for("secrets"))
+
+
+@app.route("/secrets/<name>/delete", methods=["POST"])
+def secrets_delete(name):
+    if _delete_k8s_secret(name):
+        flash(f"Secret '{name}' deleted.", "success")
+    else:
+        flash(f"Failed to delete secret '{name}'.", "error")
+    return redirect(url_for("secrets"))
 
 
 if __name__ == "__main__":

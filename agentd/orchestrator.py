@@ -25,6 +25,7 @@ from croniter import croniter as Croniter
 from agentd.config import load_task, resolve_skill
 
 NAMESPACE = os.environ.get("DEVENV_NAMESPACE", "machine-learning")
+AGENTD_NAMESPACE = "agentd"
 DEFAULT_GPU_TYPE = "a100"
 DEFAULT_TIMEOUT = None
 STALE_POD_AGE = 14400  # 4 hours
@@ -78,6 +79,21 @@ def _run_cmd(cmd, **kwargs):
         if _is_auth_error(e) and _oc_login():
             return subprocess.run(cmd, check=True, **kwargs)
         raise
+
+
+def _read_k8s_secret(secret_name: str, key: str = "value") -> str:
+    try:
+        result = subprocess.run(
+            ["oc", "get", "secret", secret_name, "-n", AGENTD_NAMESPACE,
+             "-o", f"jsonpath={{.data.{key}}}"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0 or not result.stdout:
+            return ""
+        import base64
+        return base64.b64decode(result.stdout).decode()
+    except Exception:
+        return ""
 
 
 def _resolve_task_for_pod(task_path: Path) -> Path:
@@ -199,8 +215,8 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
     env_exports = "export AGENTD_LOG_DIR=/tmp/agentd-logs && "
     if task.anthropic_base_url:
         api_key = ""
-        if task.anthropic_api_key_env:
-            api_key = os.environ.get(task.anthropic_api_key_env, "")
+        if task.anthropic_api_key_secret:
+            api_key = _read_k8s_secret(task.anthropic_api_key_secret)
         env_exports += f"export ANTHROPIC_BASE_URL='{task.anthropic_base_url}' && "
         env_exports += f"export ANTHROPIC_API_KEY='{api_key or 'dummy'}' && "
         env_exports += "unset CLAUDE_CODE_USE_VERTEX CLOUD_ML_REGION ANTHROPIC_VERTEX_PROJECT_ID && "
@@ -214,14 +230,14 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
             env_exports += f"export CLOUD_ML_REGION='{region}' && "
         if project_id:
             env_exports += f"export ANTHROPIC_VERTEX_PROJECT_ID='{project_id}' && "
-    if task.github_token_env:
-        token = os.environ.get(task.github_token_env, "")
+    if task.github_token_secret:
+        token = _read_k8s_secret(task.github_token_secret)
         if token:
             env_exports += f"export GITHUB_TOKEN='{token}' && "
-    if task.notify and task.notify.slack_webhook_env:
-        webhook = os.environ.get(task.notify.slack_webhook_env, "")
+    if task.notify and task.notify.slack_webhook_secret:
+        webhook = _read_k8s_secret(task.notify.slack_webhook_secret)
         if webhook:
-            env_exports += f"export {task.notify.slack_webhook_env}='{webhook}' && "
+            env_exports += f"export AGENTD_SLACK_WEBHOOK='{webhook}' && "
 
     pre_run = ""
     if task.pre_run:

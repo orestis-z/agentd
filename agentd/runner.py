@@ -24,11 +24,11 @@ def _log(record: dict) -> None:
 def _notify(task, exit_code: int, result_text: str, metadata: dict) -> None:
     if not task.notify:
         return
-    webhook_url = os.environ.get(task.notify.slack_webhook_env)
+    webhook_url = os.environ.get("AGENTD_SLACK_WEBHOOK")
     if not webhook_url:
         _log({
             "event": "notify_skip",
-            "reason": f"env var {task.notify.slack_webhook_env} not set",
+            "reason": "AGENTD_SLACK_WEBHOOK env var not set",
         })
         return
 

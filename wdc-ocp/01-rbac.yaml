@@ -34,3 +34,28 @@ subjects:
   - kind: ServiceAccount
     name: agentd-ui
     namespace: agentd
+---
+# Role in agentd namespace: UI manages secrets (API keys, webhooks) on behalf of users.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: agentd-ui-secrets
+  namespace: agentd
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "delete", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: agentd-ui-secrets
+  namespace: agentd
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: agentd-ui-secrets
+subjects:
+  - kind: ServiceAccount
+    name: agentd-ui
+    namespace: agentd

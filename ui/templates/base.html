@@ -12,6 +12,7 @@
 <body>
     <nav>
         <a href="{{ url_for('index') }}" class="logo">agentd</a>
+        <a href="{{ url_for('secrets') }}">Secrets</a>
     </nav>
     <main>
         {% with messages = get_flashed_messages(with_categories=true) %}
