@@ -677,6 +677,20 @@ def run_detail(run_id):
     )
 
 
+@app.route("/delete-queued/<filename>", methods=["POST"])
+def delete_queued(filename):
+    task_path = os.path.join(QUEUE_DIR, filename)
+    if not os.path.isfile(task_path):
+        flash("Queued task not found.", "error")
+        return redirect(url_for("index"))
+    try:
+        os.remove(task_path)
+        flash(f"Removed queued task: {filename}", "success")
+    except Exception as e:
+        flash(f"Failed to remove: {e}", "error")
+    return redirect(url_for("index"))
+
+
 @app.route("/cancel-task/<filename>", methods=["POST"])
 def cancel_task(filename):
     running_path = os.path.join(QUEUE_DIR, f".running-{filename}")

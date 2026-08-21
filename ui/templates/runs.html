@@ -235,6 +235,7 @@
                 <th>Task</th>
                 <th>Model</th>
                 <th>GPUs</th>
+                <th>User</th>
                 <th>Started</th>
                 <th>Status</th>
                 <th>Cost</th>
@@ -250,6 +251,7 @@
                 <td>{{ run.task }}</td>
                 <td>{{ run.model or "-" }}</td>
                 <td>{% if run.gpus is not none %}{{ run.gpus }}{% if run.gpu_type %} x {{ run.gpu_type }}{% endif %}{% else %}-{% endif %}</td>
+                <td>{{ run.dispatched_by or "-" }}</td>
                 <td>{{ run.started }}</td>
                 <td>
                     {% if run.status == 'success' %}
@@ -270,11 +272,15 @@
                     <form method="POST" action="{{ url_for('delete', run_id=run.run_id) }}" style="display:inline" onsubmit="event.stopPropagation(); return confirm('Delete logs for run {{ run.run_id_short }}?')">
                         <button type="submit" class="btn-icon" title="Delete run" onclick="event.stopPropagation()">&#x1f5d1;</button>
                     </form>
+                    {% elif run.status == 'queued' and run.queue_file %}
+                    <form method="POST" action="{{ url_for('delete_queued', filename=run.queue_file) }}" style="display:inline" onsubmit="event.stopPropagation(); return confirm('Remove queued task {{ run.task }}?')">
+                        <button type="submit" class="btn-icon" title="Remove from queue" onclick="event.stopPropagation()">&#x1f5d1;</button>
+                    </form>
                     {% else %}-{% endif %}
                 </td>
             </tr>
             {% else %}
-            <tr><td colspan="10">No runs yet.</td></tr>
+            <tr><td colspan="11">No runs yet.</td></tr>
             {% endfor %}
         </tbody>
     </table>

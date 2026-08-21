@@ -156,6 +156,10 @@ async def run(task_path: str, dry_run: bool = False) -> int:
             "num_turns": total_turns,
             "total_cost_usd": total_cost,
             "duration_ms": total_duration,
+            "model": task.model,
+            "dispatched_by": task.dispatched_by,
+            "gpus": task.gpus,
+            "gpu_type": task.gpu_type,
         }
         _notify(task, exit_code, result_text, result_metadata)
         return exit_code

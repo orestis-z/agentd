@@ -34,6 +34,16 @@ def post_slack(
 
     if metadata:
         parts = []
+        if metadata.get("model"):
+            parts.append(f"Model: {metadata['model']}")
+        if metadata.get("dispatched_by"):
+            parts.append(f"User: {metadata['dispatched_by']}")
+        gpus = metadata.get("gpus")
+        if gpus is not None:
+            gpu_str = str(gpus)
+            if metadata.get("gpu_type"):
+                gpu_str += f"x {metadata['gpu_type']}"
+            parts.append(f"GPUs: {gpu_str}")
         if metadata.get("total_cost_usd") is not None:
             parts.append(f"Cost: ${metadata['total_cost_usd']:.2f}")
         if metadata.get("num_turns") is not None:
