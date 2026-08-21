@@ -60,110 +60,126 @@
         </div>
         <details class="form-advanced">
             <summary>Advanced</summary>
-            <div class="form-row-group">
+
+            <details class="form-section" open>
+                <summary>Limits</summary>
+                <div class="form-row-group">
+                    <div class="form-row">
+                        <label>Max turns</label>
+                        <input type="number" name="max_turns" id="f-max_turns" min="1" placeholder="50">
+                    </div>
+                    <div class="form-row">
+                        <label>Max budget ($)</label>
+                        <input type="number" name="max_budget_usd" id="f-max_budget_usd" min="0" step="0.5" placeholder="5.0">
+                    </div>
+                    <div class="form-row">
+                        <label>Timeout (s)</label>
+                        <input type="number" name="timeout" id="f-timeout" min="0" placeholder="3600">
+                    </div>
+                </div>
+            </details>
+
+            <details class="form-section">
+                <summary>Execution</summary>
                 <div class="form-row">
-                    <label>Max turns</label>
-                    <input type="number" name="max_turns" id="f-max_turns" min="1" placeholder="50">
+                    <label>CWD</label>
+                    <input type="text" name="cwd" id="f-cwd" placeholder="/workspace/speculators">
                 </div>
                 <div class="form-row">
-                    <label>Max budget ($)</label>
-                    <input type="number" name="max_budget_usd" id="f-max_budget_usd" min="0" step="0.5" placeholder="5.0">
+                    <label>System prompt</label>
+                    <textarea name="system_prompt" id="f-system_prompt" rows="2" placeholder="Optional system prompt..."></textarea>
                 </div>
                 <div class="form-row">
-                    <label>Timeout (s)</label>
-                    <input type="number" name="timeout" id="f-timeout" min="0" placeholder="3600">
-                </div>
-            </div>
-            <div class="form-row">
-                <label>CWD</label>
-                <input type="text" name="cwd" id="f-cwd" placeholder="/workspace/speculators">
-            </div>
-            <div class="form-row">
-                <label>System prompt</label>
-                <textarea name="system_prompt" id="f-system_prompt" rows="2" placeholder="Optional system prompt..."></textarea>
-            </div>
-            <div class="form-row">
-                <label>Allowed tools</label>
-                <input type="text" name="allowed_tools" id="f-allowed_tools" placeholder="Bash, Read, Write, Edit (comma-separated, blank = all)">
-            </div>
-            <div class="form-row">
-                <label>Pre-run command</label>
-                <input type="text" name="pre_run" id="f-pre_run" placeholder="use speculators">
-            </div>
-            <div class="form-row-group">
-                <div class="form-row">
-                    <label>Git name</label>
-                    <input type="text" name="git_name" id="f-git_name" placeholder="Your Name">
+                    <label>Allowed tools</label>
+                    <input type="text" name="allowed_tools" id="f-allowed_tools" placeholder="Bash, Read, Write, Edit (comma-separated, blank = all)">
                 </div>
                 <div class="form-row">
-                    <label>Git email</label>
-                    <input type="text" name="git_email" id="f-git_email" placeholder="you@example.com">
+                    <label>Pre-run command</label>
+                    <input type="text" name="pre_run" id="f-pre_run" placeholder="use speculators">
                 </div>
-            </div>
-            <div class="form-row">
-                <label>GitHub token secret</label>
-                <select name="github_token_secret" id="f-github_token_secret">
-                    <option value="">None</option>
-                    {% for s in secrets %}
-                    <option value="{{ s.name }}">{{ s.name }}</option>
-                    {% endfor %}
-                </select>
-                <span class="hint">Sets GITHUB_TOKEN — GitHub personal access token</span>
-            </div>
-            <div class="form-row">
-                <label>Anthropic base URL</label>
-                <input type="text" name="anthropic_base_url" id="f-anthropic_base_url" placeholder="http://vllm-svc:8000">
-                <span class="hint">Sets ANTHROPIC_BASE_URL — custom endpoint (e.g. vLLM), overrides Vertex AI</span>
-            </div>
-            <div class="form-row">
-                <label>Anthropic API key secret</label>
-                <select name="anthropic_api_key_secret" id="f-anthropic_api_key_secret">
-                    <option value="">None</option>
-                    {% for s in secrets %}
-                    <option value="{{ s.name }}">{{ s.name }}</option>
-                    {% endfor %}
-                </select>
-                <span class="hint">Sets ANTHROPIC_API_KEY — API key for the custom endpoint</span>
-            </div>
-            <div class="form-row">
-                <label>Anthropic auth token secret</label>
-                <select name="anthropic_auth_token_secret" id="f-anthropic_auth_token_secret">
-                    <option value="">None</option>
-                    {% for s in secrets %}
-                    <option value="{{ s.name }}">{{ s.name }}</option>
-                    {% endfor %}
-                </select>
-                <span class="hint">Sets ANTHROPIC_AUTH_TOKEN — auth token for the custom endpoint</span>
-            </div>
-            <div class="form-row">
-                <label>CA certificate secret</label>
-                <select name="ca_cert_secret" id="f-ca_cert_secret">
-                    <option value="">None</option>
-                    {% for s in secrets %}
-                    <option value="{{ s.name }}">{{ s.name }}</option>
-                    {% endfor %}
-                </select>
-                <span class="hint">PEM certificate for custom endpoints using private TLS</span>
-            </div>
-            <div class="form-row">
-                <label>Slack webhook secret</label>
-                <select name="slack_webhook_secret" id="f-slack_webhook_secret">
-                    <option value="">Default (agentd-slack-webhook)</option>
-                    {% for s in secrets %}
-                    <option value="{{ s.name }}">{{ s.name }}</option>
-                    {% endfor %}
-                </select>
-                <span class="hint">Slack incoming webhook URL — <a href="https://api.slack.com/apps" target="_blank">create one here</a></span>
-            </div>
-            <div class="form-row">
-                <label>Notify on</label>
-                <label style="display:inline; color:#c9d1d9; font-size:14px; margin-right:12px">
-                    <input type="checkbox" name="notify_on_success" id="f-notify_on_success"> success
-                </label>
-                <label style="display:inline; color:#c9d1d9; font-size:14px">
-                    <input type="checkbox" name="notify_on_failure" id="f-notify_on_failure" checked> failure
-                </label>
-            </div>
+                <div class="form-row-group">
+                    <div class="form-row">
+                        <label>Git name</label>
+                        <input type="text" name="git_name" id="f-git_name" placeholder="Your Name">
+                    </div>
+                    <div class="form-row">
+                        <label>Git email</label>
+                        <input type="text" name="git_email" id="f-git_email" placeholder="you@example.com">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label>GitHub token secret</label>
+                    <select name="github_token_secret" id="f-github_token_secret">
+                        <option value="">None</option>
+                        {% for s in secrets %}
+                        <option value="{{ s.name }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="hint">Sets GITHUB_TOKEN — GitHub personal access token</span>
+                </div>
+            </details>
+
+            <details class="form-section">
+                <summary>Custom Endpoint</summary>
+                <div class="form-row">
+                    <label>Anthropic base URL</label>
+                    <input type="text" name="anthropic_base_url" id="f-anthropic_base_url" placeholder="http://vllm-svc:8000">
+                    <span class="hint">Sets ANTHROPIC_BASE_URL — custom endpoint (e.g. vLLM), overrides Vertex AI</span>
+                </div>
+                <div class="form-row">
+                    <label>Anthropic API key secret</label>
+                    <select name="anthropic_api_key_secret" id="f-anthropic_api_key_secret">
+                        <option value="">None</option>
+                        {% for s in secrets %}
+                        <option value="{{ s.name }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="hint">Sets ANTHROPIC_API_KEY — API key for the custom endpoint</span>
+                </div>
+                <div class="form-row">
+                    <label>Anthropic auth token secret</label>
+                    <select name="anthropic_auth_token_secret" id="f-anthropic_auth_token_secret">
+                        <option value="">None</option>
+                        {% for s in secrets %}
+                        <option value="{{ s.name }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="hint">Sets ANTHROPIC_AUTH_TOKEN — auth token for the custom endpoint</span>
+                </div>
+                <div class="form-row">
+                    <label>CA certificate secret</label>
+                    <select name="ca_cert_secret" id="f-ca_cert_secret">
+                        <option value="">None</option>
+                        {% for s in secrets %}
+                        <option value="{{ s.name }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="hint">PEM certificate for custom endpoints using private TLS</span>
+                </div>
+            </details>
+
+            <details class="form-section">
+                <summary>Notifications</summary>
+                <div class="form-row">
+                    <label>Slack webhook secret</label>
+                    <select name="slack_webhook_secret" id="f-slack_webhook_secret">
+                        <option value="">Default (agentd-slack-webhook)</option>
+                        {% for s in secrets %}
+                        <option value="{{ s.name }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="hint">Slack incoming webhook URL — <a href="https://api.slack.com/apps" target="_blank">create one here</a></span>
+                </div>
+                <div class="form-row">
+                    <label>Notify on</label>
+                    <label style="display:inline; color:#c9d1d9; font-size:14px; margin-right:12px">
+                        <input type="checkbox" name="notify_on_success" id="f-notify_on_success"> success
+                    </label>
+                    <label style="display:inline; color:#c9d1d9; font-size:14px">
+                        <input type="checkbox" name="notify_on_failure" id="f-notify_on_failure" checked> failure
+                    </label>
+                </div>
+            </details>
         </details>
         <button type="submit" id="submit-btn">Queue</button>
     </form>
