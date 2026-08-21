@@ -45,6 +45,7 @@ spec:
               git -C /devenv init -q
               git -C /devenv remote add origin https://github.com/neuralmagic/devenv.git 2>/dev/null || true
               git -C /devenv add -A && git -C /devenv -c user.name=agentd -c user.email=agentd@local commit -qm init
+              rm -f /data/queue/.orchestrator.lock
               exec agentd-orchestrate \
                 --queue /data/queue \
                 --devenv-dir /devenv \
