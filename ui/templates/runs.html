@@ -108,7 +108,7 @@
                     <option value="{{ s.name }}">{{ s.name }}</option>
                     {% endfor %}
                 </select>
-                <span class="muted">K8s secret containing a GitHub PAT</span>
+                <span class="muted">GITHUB_TOKEN — K8s secret containing a GitHub PAT</span>
             </div>
             <div class="form-row">
                 <label>Anthropic base URL</label>
@@ -123,7 +123,7 @@
                     <option value="{{ s.name }}">{{ s.name }}</option>
                     {% endfor %}
                 </select>
-                <span class="muted">K8s secret for custom Anthropic endpoint API key</span>
+                <span class="muted">ANTHROPIC_API_KEY — K8s secret for custom Anthropic endpoint API key</span>
             </div>
             <div class="form-row">
                 <label>Anthropic auth token secret</label>
@@ -143,7 +143,7 @@
                     <option value="{{ s.name }}">{{ s.name }}</option>
                     {% endfor %}
                 </select>
-                <span class="muted">K8s secret containing PEM certificate — installed as trusted CA in the pod</span>
+                <span class="muted">K8s secret containing PEM certificate</span>
             </div>
             <div class="form-row">
                 <label>Slack webhook secret</label>
@@ -153,7 +153,7 @@
                     <option value="{{ s.name }}">{{ s.name }}</option>
                     {% endfor %}
                 </select>
-                <span class="muted">K8s secret containing Slack webhook URL</span>
+                <span class="muted">K8s secret containing Slack webhook URL — <a href="https://api.slack.com/apps" target="_blank">create one here</a></span>
             </div>
             <div class="form-row">
                 <label>Notify on</label>
