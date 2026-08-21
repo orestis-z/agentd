@@ -214,6 +214,7 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
             tmp_path = tmp.name
         try:
             _run_cmd(["oc", "cp", tmp_path, f"{NAMESPACE}/{pod}:{ca_cert_path}"])
+            _run_cmd(["oc", "exec", pod, "-n", NAMESPACE, "--", "chmod", "644", ca_cert_path])
         finally:
             os.unlink(tmp_path)
 
