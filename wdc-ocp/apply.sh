@@ -3,7 +3,8 @@
 # Cluster-admin resources (namespace, ClusterRoleBindings, IngressController, TLS cert)
 # are applied by bootstrap-admin.sh. This script handles everything else.
 set -euo pipefail
-cd "$(dirname "$0")"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
 NS=agentd
 HOST=agentd.apps.oc-nm-upstream-wdc.washington.nmopenshift.com
 
@@ -25,7 +26,7 @@ oc create secret generic agentd-ui-cookie -n "$NS" \
   --dry-run=client -o yaml | oc apply -f -
 
 echo "==> tasks ConfigMap"
-TASK_DIR="${TASK_DIR:-$(cd "$(dirname "$0")/.." && pwd)/tasks}"
+TASK_DIR="${TASK_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)/tasks}"
 if [ ! -d "$TASK_DIR" ]; then
   echo "ERROR: tasks dir not found at $TASK_DIR"
   echo "  Set TASK_DIR to the path containing task YAML files"
@@ -46,7 +47,7 @@ echo "==> shared PVC (queue + logs + schedules)"
 oc apply -f 05-shared-pvc.yaml
 
 echo "==> devenv scripts ConfigMap"
-DEVENV_DIR="${DEVENV_DIR:-$(cd "$(dirname "$0")/../.." && pwd)/devenv}"
+DEVENV_DIR="${DEVENV_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)/devenv}"
 if [ ! -f "$DEVENV_DIR/launch.sh" ]; then
   echo "ERROR: devenv repo not found at $DEVENV_DIR"
   echo "  Set DEVENV_DIR to the path of your devenv checkout"
