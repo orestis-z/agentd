@@ -41,6 +41,7 @@ spec:
               cp -a /devenv-cm/. /devenv/
               mkdir -p /devenv/k8s
               cp /devenv-cm-k8s/* /devenv/k8s/
+              sed -i '/stdin: true/d; /tty: true/d' /devenv/k8s/pod.yml
               chmod +x /devenv/launch.sh
               git -C /devenv init -q
               git -C /devenv remote add origin https://github.com/neuralmagic/devenv.git 2>/dev/null || true
