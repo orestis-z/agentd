@@ -233,7 +233,11 @@ def _list_runs() -> list[dict]:
                 run["duration"] = f"{last['duration_ms'] / 60_000:.1f}m"
         runs.append(run)
 
-    runs.sort(key=lambda r: r.get("started_raw") or "", reverse=True)
+    status_priority = {"running": "2", "queued": "1"}
+    runs.sort(
+        key=lambda r: status_priority.get(r["status"], "0" + (r.get("started_raw") or "")),
+        reverse=True,
+    )
     return runs
 
 
