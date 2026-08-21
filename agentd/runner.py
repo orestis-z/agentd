@@ -69,10 +69,19 @@ async def run(task_path: str, dry_run: bool = False) -> int:
             "Each Bash tool call runs in a fresh shell — use absolute paths for Python "
             "and set environment variables within the same command, not across calls."
         )
-        if task.system_prompt:
-            options.system_prompt = agentd_preamble + "\n\n" + task.system_prompt
+        # Endpoints behind custom CAs (e.g. MaaS) may reject system-role messages
+        # in the messages array. Prepend to user prompt instead.
+        if task.ca_cert_secret:
+            system_parts = [agentd_preamble]
+            if task.system_prompt:
+                system_parts.append(task.system_prompt)
+            _prompt_prefix = "\n\n".join(system_parts) + "\n\n---\n\n"
         else:
-            options.system_prompt = agentd_preamble
+            _prompt_prefix = ""
+            if task.system_prompt:
+                options.system_prompt = agentd_preamble + "\n\n" + task.system_prompt
+            else:
+                options.system_prompt = agentd_preamble
         if task.allowed_tools:
             options.allowed_tools = task.allowed_tools
         if task.max_turns is not None:
@@ -94,7 +103,7 @@ async def run(task_path: str, dry_run: bool = False) -> int:
         total_cost = 0.0
         total_duration = 0
 
-        prompt = task.prompt or "Follow the instructions in the system prompt."
+        prompt = _prompt_prefix + (task.prompt or "Follow the instructions in the system prompt.")
 
         try:
             async for msg in query(prompt=prompt, options=options):
