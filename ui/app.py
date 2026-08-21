@@ -62,19 +62,20 @@ def _create_k8s_secret(name: str, value: str, created_by: str) -> tuple[bool, st
             capture_output=True, text=True, timeout=30,
         )
         if result.returncode != 0:
-            return False, result.stderr.strip()
+            return False, f"dry-run: {result.stderr.strip() or result.stdout.strip()}"
         manifest = yaml.safe_load(result.stdout)
         manifest.setdefault("metadata", {}).setdefault("labels", {})["app.kubernetes.io/managed-by"] = "agentd"
         manifest["metadata"].setdefault("annotations", {})["agentd/created-by"] = created_by
+        manifest_yaml = yaml.dump(manifest)
         apply_result = subprocess.run(
             ["oc", "apply", "-f", "-", "-n", AGENTD_NAMESPACE],
-            input=yaml.dump(manifest), capture_output=True, text=True, timeout=30,
+            input=manifest_yaml, capture_output=True, text=True, timeout=30,
         )
         if apply_result.returncode != 0:
-            return False, apply_result.stderr.strip()
+            return False, f"apply: {apply_result.stderr.strip() or apply_result.stdout.strip()}"
         return True, ""
     except Exception as e:
-        return False, str(e)
+        return False, f"{type(e).__name__}: {e}"
 
 
 def _delete_k8s_secret(name: str) -> bool:
