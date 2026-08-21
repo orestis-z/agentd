@@ -59,6 +59,7 @@ spec:
             - { name: CLAUDE_CODE_USE_VERTEX, value: "1" }
             - { name: CLOUD_ML_REGION, value: "global" }
             - { name: ANTHROPIC_VERTEX_PROJECT_ID, value: "itpc-gcp-ai-eng-claude" }
+            - { name: AGENTD_UI_URL, value: "https://agentd.apps.oc-nm-upstream-wdc.washington.nmopenshift.com" }
             - name: PATH
               value: /tools:/usr/local/bin:/usr/bin:/bin
           resources:

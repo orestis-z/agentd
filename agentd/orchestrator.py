@@ -228,7 +228,10 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
         "chmod", "644", remote_task_path,
     ])
 
+    ui_url = os.environ.get("AGENTD_UI_URL", "")
     env_exports = "export AGENTD_LOG_DIR=/tmp/agentd-logs && "
+    if ui_url:
+        env_exports += f"export AGENTD_UI_URL='{ui_url}' && "
     if task.anthropic_base_url:
         api_key = ""
         if task.anthropic_api_key_secret:

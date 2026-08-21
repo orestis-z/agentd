@@ -160,6 +160,8 @@ async def run(task_path: str, dry_run: bool = False) -> int:
             "dispatched_by": task.dispatched_by,
             "gpus": task.gpus,
             "gpu_type": task.gpu_type,
+            "run_id": hooks.run_id,
+            "ui_url": os.environ.get("AGENTD_UI_URL", ""),
         }
         _notify(task, exit_code, result_text, result_metadata)
         return exit_code

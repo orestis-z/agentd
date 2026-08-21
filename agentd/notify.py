@@ -51,6 +51,10 @@ def post_slack(
         if metadata.get("duration_ms") is not None:
             mins = metadata["duration_ms"] / 60_000
             parts.append(f"Duration: {mins:.1f}m")
+        ui_url = metadata.get("ui_url")
+        run_id = metadata.get("run_id")
+        if ui_url and run_id:
+            parts.append(f"<{ui_url}/run/{run_id}|View run>")
         if parts:
             blocks.append({
                 "type": "context",
