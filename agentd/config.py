@@ -57,10 +57,13 @@ def _github_blob_to_raw(url: str) -> str:
     )
 
 
-def resolve_skill(ref: str) -> str:
+def resolve_skill(ref: str, github_token: str | None = None) -> str:
     if ref.startswith("http://") or ref.startswith("https://"):
         raw_url = _github_blob_to_raw(ref)
-        with urllib.request.urlopen(raw_url) as resp:
+        req = urllib.request.Request(raw_url)
+        if github_token:
+            req.add_header("Authorization", f"token {github_token}")
+        with urllib.request.urlopen(req) as resp:
             return resp.read().decode()
 
     ref_path = Path(os.path.expanduser(ref))

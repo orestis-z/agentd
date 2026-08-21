@@ -103,7 +103,10 @@ def _resolve_task_for_pod(task_path: Path) -> Path:
     skill_ref = data.get("skill")
     if not skill_ref:
         return task_path
-    skill_content = resolve_skill(skill_ref)
+    github_token = None
+    if data.get("github_token_secret"):
+        github_token = _read_k8s_secret(data["github_token_secret"])
+    skill_content = resolve_skill(skill_ref, github_token=github_token)
     existing = data.get("system_prompt", "")
     data["system_prompt"] = (skill_content + "\n\n" + existing) if existing else skill_content
     del data["skill"]
@@ -258,7 +261,7 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
     if task.github_token_secret:
         token = _read_k8s_secret(task.github_token_secret)
         if token:
-            env_exports += f"export GITHUB_TOKEN='{token}' && "
+            env_exports += f"export GITHUB_TOKEN='{token}' && export GH_TOKEN='{token}' && "
     if task.notify and task.notify.slack_webhook_secret:
         webhook = _read_k8s_secret(task.notify.slack_webhook_secret)
         if webhook:
