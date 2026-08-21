@@ -272,6 +272,10 @@
                     <form method="POST" action="{{ url_for('delete', run_id=run.run_id) }}" style="display:inline" onsubmit="event.stopPropagation(); return confirm('Delete logs for run {{ run.run_id_short }}?')">
                         <button type="submit" class="btn-icon" title="Delete run" onclick="event.stopPropagation()">&#x1f5d1;</button>
                     </form>
+                    {% elif run.status == 'running' and run.queue_file %}
+                    <form method="POST" action="{{ url_for('cancel_task', filename=run.queue_file) }}" style="display:inline" onsubmit="event.stopPropagation(); return confirm('Cancel running task {{ run.task }}?')">
+                        <button type="submit" class="btn-icon" title="Cancel task" onclick="event.stopPropagation()">&#x2715;</button>
+                    </form>
                     {% elif run.status == 'queued' and run.queue_file %}
                     <form method="POST" action="{{ url_for('delete_queued', filename=run.queue_file) }}" style="display:inline" onsubmit="event.stopPropagation(); return confirm('Remove queued task {{ run.task }}?')">
                         <button type="submit" class="btn-icon" title="Remove from queue" onclick="event.stopPropagation()">&#x1f5d1;</button>
