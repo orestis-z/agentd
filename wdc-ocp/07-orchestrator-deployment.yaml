@@ -43,7 +43,7 @@ spec:
               cp /devenv-cm-k8s/* /devenv/k8s/
               chmod +x /devenv/launch.sh
               git -C /devenv init -q
-              git -C /devenv remote add origin https://github.com/neuralmagic/devenv.git
+              git -C /devenv remote add origin https://github.com/neuralmagic/devenv.git 2>/dev/null || true
               git -C /devenv add -A && git -C /devenv -c user.name=agentd -c user.email=agentd@local commit -qm init
               exec agentd-orchestrate \
                 --queue /data/queue \
