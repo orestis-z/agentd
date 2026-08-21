@@ -10,6 +10,9 @@ body {
 nav {
     padding: 12px 24px;
     border-bottom: 1px solid #21262d;
+    display: flex;
+    align-items: center;
+    gap: 24px;
 }
 
 nav .logo {
@@ -17,6 +20,16 @@ nav .logo {
     text-decoration: none;
     font-weight: bold;
     font-size: 18px;
+}
+
+nav a:not(.logo) {
+    color: #8b949e;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+nav a:not(.logo):hover {
+    color: #c9d1d9;
 }
 
 main {
@@ -75,7 +88,7 @@ a:hover { text-decoration: underline; }
 
 .launch-form { margin-bottom: 24px; }
 
-select, input[type="text"], input[type="number"], textarea {
+select, input[type="text"], input[type="number"], input[type="password"], textarea {
     background: #161b22;
     color: #c9d1d9;
     border: 1px solid #30363d;
@@ -91,6 +104,7 @@ textarea { width: 100%; resize: vertical; }
 .form-row label { display: block; color: #8b949e; font-size: 13px; margin-bottom: 2px; }
 .form-row input[type="text"],
 .form-row input[type="number"],
+.form-row input[type="password"],
 .form-row select { width: 100%; }
 
 .form-row-group { display: flex; gap: 12px; }
