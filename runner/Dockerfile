@@ -10,3 +10,7 @@ RUN git clone --depth 1 https://github.com/vllm-project/compressed-tensors.git /
 # Pre-install agentd
 COPY . /tmp/agentd-src
 RUN pip install --no-cache-dir /tmp/agentd-src && rm -rf /tmp/agentd-src
+
+COPY runner/entrypoint-wrapper.sh /entrypoint-wrapper.sh
+RUN chmod +x /entrypoint-wrapper.sh
+ENTRYPOINT ["/entrypoint-wrapper.sh"]
