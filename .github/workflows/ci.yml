@@ -88,4 +88,4 @@ jobs:
         context: .
         file: runner/Dockerfile
         push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
-        tags: ghcr.io/${{ github.repository_owner }}/devenv:agentd
+        tags: ghcr.io/${{ github.repository_owner }}/agentd-runner:latest

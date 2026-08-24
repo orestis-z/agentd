@@ -146,16 +146,9 @@ def _resolve_task_for_pod(task_path: Path) -> Path:
     return resolved
 
 
-RUNNER_IMAGE_OWNER = os.environ.get("AGENTD_RUNNER_IMAGE_OWNER", "orestis-z")
-RUNNER_IMAGE_TAG = os.environ.get("AGENTD_RUNNER_IMAGE_TAG", "agentd")
-
-
 def provision_pod(task_name: str, gpus: int, gpu_type: str, devenv_dir: Path):
     instance = _instance_name(task_name)
     print(f"=== Provisioning pod {pod_name(task_name)} ({gpus}x {gpu_type}) ===")
-    env = os.environ.copy()
-    env["DEVENV_OWNER"] = RUNNER_IMAGE_OWNER
-    env["IMAGE_TAG"] = RUNNER_IMAGE_TAG
     subprocess.run(
         [
             str(devenv_dir / "launch.sh"),
@@ -165,7 +158,6 @@ def provision_pod(task_name: str, gpus: int, gpu_type: str, devenv_dir: Path):
             "--cluster",
         ],
         stdin=subprocess.DEVNULL,
-        env=env,
     )
     # launch.sh exits non-zero when tmux attach fails (expected: stdin is /dev/null).
     # The oc wait below is the real readiness check.
