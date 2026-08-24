@@ -293,12 +293,14 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
     if task.pre_run:
         pre_run = f"{task.pre_run} && "
 
-    agent_cmd = f"source /root/.bashrc 2>/dev/null; {pre_run}python -m agentd --task {remote_task_path}"
+    agent_cmd = "source /root/.bashrc 2>/dev/null; " \
+                f"python -m agentd --task {remote_task_path}"
     result = subprocess.run(
         [
             "oc", "exec", pod, "-n", NAMESPACE, "--",
             "bash", "-c",
             f"{env_exports}"
+            f"{pre_run}"
             f"chmod -R g+wX /workspace 2>/dev/null; "
             f"sudo -E -u claude-runner bash -i -c {repr(agent_cmd)}",
         ],
