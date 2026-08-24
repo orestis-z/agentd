@@ -42,3 +42,50 @@ jobs:
         context: ui
         push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
         tags: ghcr.io/${{ github.repository_owner }}/agentd-ui:${{ steps.tag.outputs.tag }}
+
+  build-orchestrator:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+    - uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Compute image tag
+      id: tag
+      run: |
+        if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          echo "tag=latest" >> "$GITHUB_OUTPUT"
+        else
+          REF="${{ github.head_ref || github.ref_name }}"
+          echo "tag=$(echo "$REF" | sed 's/[^a-zA-Z0-9._-]/-/g')" >> "$GITHUB_OUTPUT"
+        fi
+    - uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: orchestrator/Dockerfile
+        push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
+        tags: ghcr.io/${{ github.repository_owner }}/agentd-orchestrator:${{ steps.tag.outputs.tag }}
+
+  build-runner:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+    - uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: runner/Dockerfile
+        push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
+        tags: ghcr.io/${{ github.repository_owner }}/devenv:agentd

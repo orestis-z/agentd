@@ -18,6 +18,7 @@ else
     --docker-password="${GHCR_TOKEN}" \
     --dry-run=client -o yaml | oc apply -f -
   oc secrets link agentd-ui ghcr-pull-secret --for=pull -n "$NS"
+  oc secrets link agentd-orchestrator ghcr-pull-secret --for=pull -n "$NS"
 fi
 
 echo "==> cookie secret (oauth-proxy session)"

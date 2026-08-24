@@ -145,9 +145,16 @@ def _resolve_task_for_pod(task_path: Path) -> Path:
     return resolved
 
 
+RUNNER_IMAGE_OWNER = os.environ.get("AGENTD_RUNNER_IMAGE_OWNER", "orestis-z")
+RUNNER_IMAGE_TAG = os.environ.get("AGENTD_RUNNER_IMAGE_TAG", "agentd")
+
+
 def provision_pod(task_name: str, gpus: int, gpu_type: str, devenv_dir: Path):
     instance = _instance_name(task_name)
     print(f"=== Provisioning pod {pod_name(task_name)} ({gpus}x {gpu_type}) ===")
+    env = os.environ.copy()
+    env["DEVENV_OWNER"] = RUNNER_IMAGE_OWNER
+    env["IMAGE_TAG"] = RUNNER_IMAGE_TAG
     subprocess.run(
         [
             str(devenv_dir / "launch.sh"),
@@ -157,6 +164,7 @@ def provision_pod(task_name: str, gpus: int, gpu_type: str, devenv_dir: Path):
             "--cluster",
         ],
         stdin=subprocess.DEVNULL,
+        env=env,
     )
     # launch.sh exits non-zero when tmux attach fails (expected: stdin is /dev/null).
     # The oc wait below is the real readiness check.
@@ -185,7 +193,10 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
     setup_script = (
         "set -ex && "
         f"mkdir -p {remote_task_dir} /tmp/agentd-logs && chmod 1777 /tmp/agentd-logs && "
-        "pip install git+https://github.com/orestis-z/agentd.git && "
+        "for r in /repos-cache/*/; do "
+        "  name=$(basename \"$r\"); "
+        "  [ -d /workspace/$name ] || cp -a \"$r\" /workspace/$name; "
+        "done && "
         "WS_GID=$(stat -c '%g' /workspace 2>/dev/null || echo 0) && "
         "{ getent group $WS_GID &>/dev/null || groupadd -g $WS_GID workspace; } && "
         "{ id claude-runner &>/dev/null 2>&1 || useradd -M -d /root -g $WS_GID -G 0 claude-runner; } && "
