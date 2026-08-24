@@ -55,6 +55,7 @@ spec:
                 --poll-interval 1 \
                 --namespace machine-learning
           env:
+            - { name: PYTHONUNBUFFERED, value: "1" }
             - { name: USER, value: agentd }
             - { name: CLAUDE_CODE_USE_VERTEX, value: "1" }
             - { name: CLOUD_ML_REGION, value: "global" }
