@@ -7,6 +7,9 @@ RUN git clone --depth 1 https://github.com/vllm-project/compressed-tensors.git /
  && git clone --depth 1 https://github.com/vllm-project/speculators.git /repos-cache/speculators \
  && git clone --depth 1 https://github.com/vllm-project/vllm.git /repos-cache/vllm
 
+# Configure gh as git credential helper so GITHUB_TOKEN works for private repos
+RUN gh auth setup-git
+
 # Pre-install agentd
 COPY . /tmp/agentd-src
 RUN pip install --no-cache-dir /tmp/agentd-src && rm -rf /tmp/agentd-src
