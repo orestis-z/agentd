@@ -34,6 +34,7 @@ spec:
               cp /devenv-cm-k8s/* /devenv/k8s/
               sed -i '/stdin: true/d; /tty: true/d' /devenv/k8s/pod.yml
               sed -i "s|image: ghcr.io/\${DEVENV_OWNER}/devenv:\${IMAGE_TAG}|image: ${AGENTD_RUNNER_IMAGE}|" /devenv/k8s/pod.yml
+              echo '#!/bin/bash' > /devenv/k8s/setup-repos.sh
               chmod +x /devenv/launch.sh
               git -C /devenv init -q
               git -C /devenv remote add origin https://github.com/neuralmagic/devenv.git 2>/dev/null || true
