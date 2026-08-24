@@ -25,6 +25,7 @@ spec:
       containers:
         - name: orchestrator
           image: ghcr.io/orestis-z/agentd-orchestrator:latest
+          imagePullPolicy: Always
           command: ["/bin/sh", "-c"]
           args:
             - |
