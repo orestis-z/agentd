@@ -7,8 +7,9 @@ RUN git clone --depth 1 https://github.com/vllm-project/compressed-tensors.git /
  && git clone --depth 1 https://github.com/vllm-project/speculators.git /repos-cache/speculators \
  && git clone --depth 1 https://github.com/vllm-project/vllm.git /repos-cache/vllm
 
-# Configure gh as git credential helper so GITHUB_TOKEN works for private repos
-RUN gh auth setup-git
+# Configure git to use GITHUB_TOKEN for private repos at runtime
+RUN git config --system credential.https://github.com.helper \
+    '!f() { echo "username=x-access-token"; echo "password=$GITHUB_TOKEN"; }; f'
 
 # Pre-install agentd
 COPY . /tmp/agentd-src
