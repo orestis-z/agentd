@@ -492,6 +492,10 @@ def watch_queue(
     _register_signal_handlers()
     cleanup_stale_pods()
 
+    for marker in queue_dir.glob(".running-*.yml"):
+        print(f"=== Cleaning stale running marker: {marker.name} ===")
+        marker.unlink()
+
     print(f"=== Orchestrator watching {queue_dir} (poll every {poll_interval}s, max parallel {max_parallel}) ===")
     if schedule_dir:
         print(f"=== Checking schedules in {schedule_dir} ===")
