@@ -228,7 +228,8 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
         f"  printf '\\n%s' \"$RULES\" >> {cwd}/.claude/CLAUDE.md; "
         f"else "
         f"  printf '%s' \"$RULES\" > {cwd}/.claude/CLAUDE.md; "
-        f"fi",
+        f"fi && "
+        f"chmod -R a+rwX {cwd}/.claude",
     ])
 
     if ca_cert_pem:
