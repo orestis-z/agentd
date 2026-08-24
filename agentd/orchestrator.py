@@ -299,6 +299,7 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
             "oc", "exec", pod, "-n", NAMESPACE, "--",
             "bash", "-c",
             f"{env_exports}"
+            f"chmod -R g+wX /workspace 2>/dev/null; "
             f"sudo -E -u claude-runner bash -i -c {repr(agent_cmd)}",
         ],
         timeout=timeout,
