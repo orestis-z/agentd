@@ -335,7 +335,7 @@ def teardown_pod(task_name: str, devenv_dir: Path):
     pvc = f"devenv-workspace-{_user()}-{instance}"
     try:
         subprocess.run(
-            ["oc", "delete", "pvc", pvc, "-n", NAMESPACE],
+            ["oc", "delete", "pvc", pvc, "-n", NAMESPACE, "--wait"],
             timeout=120,
         )
     except Exception:
