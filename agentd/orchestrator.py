@@ -17,6 +17,8 @@ import subprocess
 import sys
 import threading
 import time
+import traceback
+import uuid
 from concurrent.futures import ThreadPoolExecutor, Future
 from datetime import datetime, timezone
 from pathlib import Path
@@ -96,6 +98,27 @@ def _read_k8s_secret(secret_name: str, key: str = "value") -> str:
         return base64.b64decode(result.stdout).decode()
     except Exception:
         return ""
+
+
+def _write_failure_log(log_dir: Path, task_name: str, error: str, task_data: dict | None = None):
+    log_dir.mkdir(parents=True, exist_ok=True)
+    run_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    log_path = log_dir / f"{run_id}.jsonl"
+    start_record = {"event": "task_start", "task": task_name, "ts": now}
+    if task_data:
+        for k in ("model", "gpus", "gpu_type", "dispatched_by"):
+            if task_data.get(k) is not None:
+                start_record[k] = task_data[k]
+    result_record = {
+        "event": "task_result", "task": task_name, "ts": now,
+        "is_error": True, "subtype": "orchestrator_error",
+        "result": error, "error": error,
+        "num_turns": 0, "total_cost_usd": 0, "duration_ms": 0,
+    }
+    with log_path.open("w") as f:
+        f.write(json.dumps(start_record) + "\n")
+        f.write(json.dumps(result_record) + "\n")
 
 
 def _resolve_task_for_pod(task_path: Path) -> Path:
@@ -443,6 +466,10 @@ def process_task(
         print(f"=== Task {task.name} {status} (exit {exit_code}) ===")
     except Exception as e:
         print(f"ERROR: {task.name}: {e}")
+        _write_failure_log(log_dir, task.name, str(e), {
+            "model": task.model, "gpus": task.gpus,
+            "gpu_type": task.gpu_type, "dispatched_by": task.dispatched_by,
+        })
         failed_dir.mkdir(parents=True, exist_ok=True)
         shutil.move(str(task_path), str(failed_dir / task_path.name))
     finally:
@@ -529,6 +556,15 @@ def watch_queue(
                     task = load_task(task_path)
                 except Exception as e:
                     print(f"ERROR: invalid task {task_path}: {e}")
+                    try:
+                        with task_path.open() as f:
+                            task_data = yaml.safe_load(f) or {}
+                    except Exception:
+                        task_data = {}
+                    _write_failure_log(
+                        log_dir, task_data.get("name", task_path.stem),
+                        f"Invalid task: {e}", task_data,
+                    )
                     failed_dir.mkdir(parents=True, exist_ok=True)
                     shutil.move(str(task_path), str(failed_dir / task_path.name))
                     continue

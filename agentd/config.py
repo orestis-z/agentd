@@ -105,26 +105,17 @@ def load_task(path: str | Path) -> TaskConfig:
             slack_webhook_secret=n.get("slack_webhook_secret", DEFAULT_SLACK_WEBHOOK_SECRET),
         )
 
-    skill_ref = data.get("skill")
-    skill_args = data.get("skill_args")
-    system_prompt = data.get("system_prompt")
-    if skill_ref:
-        skill_content = resolve_skill(skill_ref)
-        if system_prompt:
-            system_prompt = skill_content + "\n\n" + system_prompt
-        else:
-            system_prompt = skill_content
-
     prompt = data.get("prompt", "")
+    skill_args = data.get("skill_args")
     if skill_args:
         prompt = f"{prompt}\n\nSkill arguments: {skill_args}"
 
     return TaskConfig(
         name=data["name"],
         prompt=prompt,
-        skill=skill_ref,
+        skill=data.get("skill"),
         skill_args=skill_args,
-        system_prompt=system_prompt,
+        system_prompt=data.get("system_prompt"),
         allowed_tools=data.get("allowed_tools", []),
         max_turns=data.get("max_turns"),
         max_budget_usd=data.get("max_budget_usd"),

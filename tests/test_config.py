@@ -134,7 +134,8 @@ skill: {skill_file}
     task = load_task(p)
     assert task.name == "skill-only"
     assert task.prompt == ""
-    assert task.system_prompt == "You are a code reviewer."
+    assert task.skill == str(skill_file)
+    assert task.system_prompt is None
 
 
 def test_load_skill_local(tmp_path):
@@ -147,10 +148,10 @@ skill: {skill_file}
 """)
     task = load_task(p)
     assert task.skill == str(skill_file)
-    assert task.system_prompt == "You are a code reviewer."
+    assert task.system_prompt is None
 
 
-def test_load_skill_prepends_to_system_prompt(tmp_path):
+def test_load_skill_with_system_prompt(tmp_path):
     skill_file = tmp_path / "my_skill.md"
     skill_file.write_text("You are a code reviewer.")
     p = _write_yaml(tmp_path, f"""
@@ -160,7 +161,8 @@ skill: {skill_file}
 system_prompt: Be concise.
 """)
     task = load_task(p)
-    assert task.system_prompt == "You are a code reviewer.\n\nBe concise."
+    assert task.system_prompt == "Be concise."
+    assert task.skill == str(skill_file)
 
 
 def test_load_skill_args(tmp_path):
