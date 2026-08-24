@@ -454,7 +454,16 @@ def process_task(
     try:
         shutil.copy2(str(task_path), str(running_marker))
         provision_pod(task.name, gpus, gpu_type, devenv_dir)
+        logs_before = set(log_dir.glob("*.jsonl")) if log_dir.exists() else set()
         exit_code = run_task_in_pod(task_path, task, timeout)
+        copy_logs_out(task.name, log_dir)
+        logs_after = set(log_dir.glob("*.jsonl")) if log_dir.exists() else set()
+
+        if exit_code != 0 and logs_after == logs_before:
+            _write_failure_log(log_dir, task.name, f"Pod command failed (exit {exit_code})", {
+                "model": task.model, "gpus": task.gpus,
+                "gpu_type": task.gpu_type, "dispatched_by": task.dispatched_by,
+            })
 
         dest = completed_dir if exit_code == 0 else failed_dir
         dest.mkdir(parents=True, exist_ok=True)
