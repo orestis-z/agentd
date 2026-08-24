@@ -135,10 +135,6 @@ def _resolve_task_for_pod(task_path: Path) -> Path:
     skill_content = f"Skill source: {skill_ref}\n\n{skill_content}"
     existing = data.get("system_prompt", "")
     data["system_prompt"] = (skill_content + "\n\n" + existing) if existing else skill_content
-    del data["skill"]
-    skill_args = data.pop("skill_args", None)
-    if skill_args:
-        data["prompt"] = data.get("prompt", "") + f"\n\nSkill arguments: {skill_args}"
     data.setdefault("prompt", "Follow the instructions in the system prompt.")
     resolved = task_path.parent / f".resolved-{task_path.name}"
     with resolved.open("w") as f:

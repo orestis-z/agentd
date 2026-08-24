@@ -5,8 +5,7 @@ FROM ${DEVENV_BASE}
 RUN git clone --depth 1 https://github.com/vllm-project/compressed-tensors.git /repos-cache/compressed-tensors \
  && git clone --depth 1 https://github.com/vllm-project/llm-compressor.git /repos-cache/llm-compressor \
  && git clone --depth 1 https://github.com/vllm-project/speculators.git /repos-cache/speculators \
- && git clone --depth 1 https://github.com/vllm-project/vllm.git /repos-cache/vllm \
- && git clone --depth 1 https://github.com/neuralmagic/llm-compressor-testing.git /repos-cache/llm-compressor-testing
+ && git clone --depth 1 https://github.com/vllm-project/vllm.git /repos-cache/vllm
 
 # Pre-install agentd
 COPY . /tmp/agentd-src
