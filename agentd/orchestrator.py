@@ -228,8 +228,7 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
         f"  printf '\\n%s' \"$RULES\" >> {cwd}/.claude/CLAUDE.md; "
         f"else "
         f"  printf '%s' \"$RULES\" > {cwd}/.claude/CLAUDE.md; "
-        f"fi && "
-        f"chmod -R a+rwX {cwd}/.claude",
+        f"fi",
     ])
 
     if ca_cert_pem:
@@ -301,7 +300,6 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
             "bash", "-c",
             f"{env_exports}"
             f"{pre_run}"
-            f"chmod -R g+wX /workspace 2>/dev/null; "
             f"sudo -E -u claude-runner bash -i -c {repr(agent_cmd)}",
         ],
         timeout=timeout,
