@@ -32,8 +32,10 @@ def _log(record: dict) -> None:
     if run_id is not None:
         record.setdefault("run_id", run_id)
     line = json.dumps(record, default=str)
-    print(line, file=sys.stderr, flush=True)
-    # temporary: file-based logging until Loki is set up
+    try:
+        print(line, file=sys.stderr, flush=True)
+    except BlockingIOError:
+        pass
     if _log_file is not None:
         _log_file.write(line + "\n")
         _log_file.flush()
