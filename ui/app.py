@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 
 import yaml
 from croniter import croniter as Croniter
-from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
+from flask import Flask, flash, jsonify, redirect, render_template, request, send_file, url_for
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "agentd-ui-dev-key")
@@ -679,6 +679,18 @@ def run_detail(run_id):
         result_text=result_text,
         raw_events=raw_events,
     )
+
+
+@app.route("/run/<run_id>/download")
+def run_download(run_id):
+    log_path = os.path.join(LOG_DIR, f"{run_id}.jsonl")
+    if not os.path.isfile(log_path):
+        flash("Run not found.", "error")
+        return redirect(url_for("index"))
+    first, _ = _read_first_last(log_path)
+    task_name = first.get("task", "unknown") if first else "unknown"
+    filename = f"{task_name}_{run_id[:8]}.jsonl"
+    return send_file(log_path, as_attachment=True, download_name=filename)
 
 
 @app.route("/delete-queued/<filename>", methods=["POST"])

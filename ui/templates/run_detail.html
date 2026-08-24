@@ -28,6 +28,7 @@
 <div class="detail-actions">
     {% if run.run_id %}
     <a class="btn" href="{{ url_for('index', duplicate_run=run.run_id) }}">Duplicate</a>
+    <a class="btn" href="{{ url_for('run_download', run_id=run.run_id) }}">Download Logs</a>
     <form method="POST" action="{{ url_for('delete', run_id=run.run_id) }}" style="display:inline" onsubmit="return confirm('Delete logs for run {{ run.run_id_short }}?')">
         <button type="submit" class="btn btn-danger">Delete</button>
     </form>

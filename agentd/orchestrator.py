@@ -217,6 +217,8 @@ def run_task_in_pod(task_path: Path, task: "TaskConfig", timeout: int) -> int:
         "Do NOT use git worktrees or the EnterWorktree tool — work directly in the repository.\n"
         "Each Bash tool call runs in a fresh shell — environment variables, venv activation, "
         "and cd do not persist across calls. Use absolute paths and set variables within the same command.\n"
+        "Save any artifacts (reports, summaries, analysis files) to /workspace/artifacts/ — "
+        "this directory is collected after the run. Upload artifacts to S3 as instructed in the devenv CLAUDE.md.\n"
     )
     _run_cmd([
         "oc", "exec", pod, "-n", NAMESPACE, "--",
