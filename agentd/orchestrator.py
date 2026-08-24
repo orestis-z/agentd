@@ -132,6 +132,7 @@ def _resolve_task_for_pod(task_path: Path) -> Path:
     if data.get("github_token_secret"):
         github_token = _read_k8s_secret(data["github_token_secret"])
     skill_content = resolve_skill(skill_ref, github_token=github_token)
+    skill_content = f"Skill source: {skill_ref}\n\n{skill_content}"
     existing = data.get("system_prompt", "")
     data["system_prompt"] = (skill_content + "\n\n" + existing) if existing else skill_content
     del data["skill"]
